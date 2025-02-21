@@ -50,20 +50,21 @@ export default function QuickTransfer({ accounts }: Props) {
   };
 
   const activeAccounts = accounts.filter(a => a.status === 'ACTIVE');
+  const inputClass = "w-full bg-surface-secondary border border-border-primary text-text-primary rounded-lg px-4 py-2.5 text-sm placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors";
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Transfer</h3>
+    <div className="bg-surface-elevated border border-border-primary rounded-xl p-6">
+      <h3 className="text-base font-semibold text-text-primary mb-5">Quick Transfer</h3>
       <form onSubmit={handleSubmit} className="space-y-3">
         <select value={sourceId} onChange={(e) => setSourceId(e.target.value)}
-          className="w-full border rounded px-3 py-2 text-sm" required>
+          className={inputClass} required>
           <option value="">From account...</option>
           {activeAccounts.map(a => (
             <option key={a.id} value={a.id}>{a.accountName} (${a.balance.toFixed(2)})</option>
           ))}
         </select>
         <select value={destId} onChange={(e) => setDestId(e.target.value)}
-          className="w-full border rounded px-3 py-2 text-sm" required>
+          className={inputClass} required>
           <option value="">To account...</option>
           {activeAccounts.map(a => (
             <option key={a.id} value={a.id}>{a.accountName} (${a.balance.toFixed(2)})</option>
@@ -71,17 +72,21 @@ export default function QuickTransfer({ accounts }: Props) {
         </select>
         <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
           placeholder="Amount" step="0.01" min="0.01"
-          className="w-full border rounded px-3 py-2 text-sm" required />
+          className={inputClass} required />
         <input type="text" value={description} onChange={(e) => setDescription(e.target.value)}
           placeholder="Description (optional)"
-          className="w-full border rounded px-3 py-2 text-sm" />
+          className={inputClass} />
         <button type="submit" disabled={mutation.isPending}
-          className="w-full bg-indigo-600 text-white py-2 rounded text-sm hover:bg-indigo-700 disabled:opacity-50">
+          className="w-full bg-accent hover:bg-accent-hover text-white py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           {mutation.isPending ? 'Processing...' : 'Transfer'}
         </button>
       </form>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-      {success && <p className="mt-2 text-sm text-green-600">{success}</p>}
+      {error && (
+        <div className="mt-3 bg-danger-muted text-danger rounded-lg p-3 text-sm">{error}</div>
+      )}
+      {success && (
+        <div className="mt-3 bg-accent-muted text-accent rounded-lg p-3 text-sm">{success}</div>
+      )}
     </div>
   );
 }
