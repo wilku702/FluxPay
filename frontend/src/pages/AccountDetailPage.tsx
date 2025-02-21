@@ -7,6 +7,21 @@ import TransactionTable from '../components/TransactionTable';
 import TransactionFilterBar from '../components/TransactionFilters';
 import Pagination from '../components/Pagination';
 
+const statusConfig: Record<string, { dot: string; badge: string }> = {
+  ACTIVE: {
+    dot: 'bg-success',
+    badge: 'bg-success/15 text-success',
+  },
+  FROZEN: {
+    dot: 'bg-warning',
+    badge: 'bg-warning/15 text-warning',
+  },
+  CLOSED: {
+    dot: 'bg-text-muted',
+    badge: 'bg-surface-hover text-text-muted',
+  },
+};
+
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
   const accountId = parseInt(id!);
@@ -47,47 +62,96 @@ export default function AccountDetailPage() {
     setPage(0);
   };
 
-  if (accountLoading) return <div className="text-center py-8 text-gray-500">Loading...</div>;
-  if (!account) return <div className="text-center py-8 text-red-500">Account not found.</div>;
+  if (accountLoading) {
+    return (
+      <div>
+        <div className="bg-surface-elevated border border-border-primary rounded-xl p-6 mb-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="h-7 w-48 bg-surface-hover rounded-lg animate-pulse" />
+              <div className="h-4 w-16 bg-surface-hover rounded animate-pulse mt-2" />
+            </div>
+            <div className="h-6 w-20 bg-surface-hover rounded-full animate-pulse" />
+          </div>
+          <div className="h-10 w-44 bg-surface-hover rounded-lg animate-pulse mt-6" />
+        </div>
+        <div className="bg-surface-elevated border border-border-primary rounded-xl overflow-hidden">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3.5 border-b border-border-primary last:border-0">
+              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
+              <div className="h-5 w-14 bg-surface-hover rounded-full animate-pulse" />
+              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
+              <div className="h-4 w-32 bg-surface-hover rounded animate-pulse flex-1" />
+              <div className="h-5 w-20 bg-surface-hover rounded-full animate-pulse" />
+              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-  const statusColors: Record<string, string> = {
-    ACTIVE: 'bg-green-100 text-green-800',
-    FROZEN: 'bg-blue-100 text-blue-800',
-    CLOSED: 'bg-gray-100 text-gray-800',
-  };
+  if (!account) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-4">
+        <div className="w-12 h-12 rounded-xl bg-danger-muted flex items-center justify-center">
+          <svg className="w-6 h-6 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-text-primary">Account not found</p>
+      </div>
+    );
+  }
+
+  const status = statusConfig[account.status] || statusConfig.CLOSED;
 
   return (
     <div>
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
+      {/* Account header card */}
+      <div className="bg-surface-elevated border border-border-primary rounded-xl p-6 mb-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{account.accountName}</h1>
-            <p className="text-sm text-gray-500 mt-1">{account.currency}</p>
+            <h1 className="text-2xl font-semibold text-text-primary">{account.accountName}</h1>
+            <p className="text-sm text-text-muted mt-1">{account.currency}</p>
           </div>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[account.status]}`}>
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.badge}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
             {account.status}
           </span>
         </div>
-        <p className="mt-4 text-3xl font-bold text-gray-900">
-          ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-        </p>
+        <div className="mt-5">
+          <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Available Balance</p>
+          <p className="text-4xl font-bold text-text-primary tabular-nums tracking-tight">
+            ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </p>
+        </div>
       </div>
 
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Transaction History</h2>
+      <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">Transaction History</h2>
       <TransactionFilterBar onFilter={handleFilter} />
 
       {txLoading ? (
-        <div className="text-center py-8 text-gray-500">Loading transactions...</div>
+        <div className="bg-surface-elevated border border-border-primary rounded-xl overflow-hidden">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3.5 border-b border-border-primary last:border-0">
+              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
+              <div className="h-5 w-14 bg-surface-hover rounded-full animate-pulse" />
+              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
+              <div className="h-4 w-32 bg-surface-hover rounded animate-pulse flex-1" />
+              <div className="h-5 w-20 bg-surface-hover rounded-full animate-pulse" />
+              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
       ) : (
         <>
-          <div className="bg-white rounded-lg shadow">
-            <TransactionTable
-              transactions={txPage?.content || []}
-              onSort={handleSort}
-              sortBy={sortBy}
-              sortDir={sortDir}
-            />
-          </div>
+          <TransactionTable
+            transactions={txPage?.content || []}
+            onSort={handleSort}
+            sortBy={sortBy}
+            sortDir={sortDir}
+          />
           {txPage && (
             <Pagination
               page={txPage.number}
