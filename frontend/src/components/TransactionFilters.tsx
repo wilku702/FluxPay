@@ -40,17 +40,18 @@ export default function TransactionFilters({ onFilter }: Props) {
     onFilter({});
   };
 
+  const selectClass = "bg-surface-secondary border border-border-primary text-text-primary rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors";
+  const inputClass = "bg-surface-secondary border border-border-primary text-text-primary rounded-lg px-3 py-2 text-sm placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors";
+
   return (
-    <div className="bg-white rounded-lg shadow p-4 mb-4">
+    <div className="bg-surface-elevated border border-border-primary rounded-xl p-4 mb-4">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <select value={type} onChange={(e) => setType(e.target.value)}
-          className="border rounded px-3 py-2 text-sm">
+        <select value={type} onChange={(e) => setType(e.target.value)} className={selectClass}>
           <option value="">All Types</option>
           <option value="CREDIT">Credit</option>
           <option value="DEBIT">Debit</option>
         </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)}
-          className="border rounded px-3 py-2 text-sm">
+        <select value={status} onChange={(e) => setStatus(e.target.value)} className={selectClass}>
           <option value="">All Statuses</option>
           <option value="COMPLETED">Completed</option>
           <option value="PENDING">Pending</option>
@@ -58,21 +59,21 @@ export default function TransactionFilters({ onFilter }: Props) {
           <option value="REVERSED">Reversed</option>
         </select>
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
-          placeholder="From" className="border rounded px-3 py-2 text-sm" />
+          placeholder="From" className={inputClass} />
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
-          placeholder="To" className="border rounded px-3 py-2 text-sm" />
+          placeholder="To" className={inputClass} />
         <input type="number" value={minAmount} onChange={(e) => setMinAmount(e.target.value)}
-          placeholder="Min $" className="border rounded px-3 py-2 text-sm" step="0.01" />
+          placeholder="Min $" className={inputClass} step="0.01" />
         <input type="number" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)}
-          placeholder="Max $" className="border rounded px-3 py-2 text-sm" step="0.01" />
+          placeholder="Max $" className={inputClass} step="0.01" />
       </div>
       <div className="flex gap-2 mt-3">
         <button onClick={handleApply}
-          className="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700">
+          className="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
           Apply
         </button>
         <button onClick={handleReset}
-          className="bg-gray-200 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-300">
+          className="bg-surface-hover text-text-secondary border border-border-primary px-4 py-2 rounded-lg text-sm font-medium hover:text-text-primary hover:border-border-secondary transition-colors">
           Reset
         </button>
       </div>
