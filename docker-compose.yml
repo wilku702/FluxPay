@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: fluxpay-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: fluxpay
+      POSTGRES_USER: fluxpay
+      POSTGRES_PASSWORD: fluxpay
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fluxpay"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fluxpay-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/fluxpay
+      SPRING_DATASOURCE_USERNAME: fluxpay
+      SPRING_DATASOURCE_PASSWORD: fluxpay
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-for-fluxpay-that-is-long-enough}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fluxpay-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
