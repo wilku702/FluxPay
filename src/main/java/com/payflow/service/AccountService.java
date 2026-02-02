@@ -1,0 +1,57 @@
+package com.payflow.service;
+
+import com.payflow.dto.AccountResponse;
+import com.payflow.dto.CreateAccountRequest;
+import com.payflow.dto.UpdateAccountStatusRequest;
+import com.payflow.exception.AccountNotFoundException;
+import com.payflow.model.Account;
+import com.payflow.repository.AccountRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class AccountService {
+
+    private final AccountRepository accountRepository;
+
+    @Transactional
+    public AccountResponse create(Long userId, CreateAccountRequest request) {
+        Account account = new Account(userId, request.getAccountName(), request.getCurrency());
+        account = accountRepository.save(account);
+        return AccountResponse.from(account);
+    }
+
+    @Transactional(readOnly = true)
+    public AccountResponse getById(Long id, Long userId) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new AccountNotFoundException(id));
+        if (!account.getUserId().equals(userId)) {
+            throw new AccountNotFoundException(id);
+        }
+        return AccountResponse.from(account);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AccountResponse> getByUserId(Long userId) {
+        return accountRepository.findByUserId(userId).stream()
+                .map(AccountResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public AccountResponse updateStatus(Long id, Long userId, UpdateAccountStatusRequest request) {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new AccountNotFoundException(id));
+        if (!account.getUserId().equals(userId)) {
+            throw new AccountNotFoundException(id);
+        }
+        account.setStatus(request.getStatus());
+        account = accountRepository.save(account);
+        return AccountResponse.from(account);
+    }
+}
