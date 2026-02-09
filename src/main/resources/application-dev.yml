@@ -9,6 +9,10 @@ spring:
       hibernate:
         format_sql: true
 
+app:
+  jwt:
+    secret: dev-only-secret-key-that-is-long-enough-for-hmac-sha256-algorithm
+
 logging:
   level:
     com.payflow: DEBUG
