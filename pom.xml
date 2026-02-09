@@ -54,6 +54,16 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
+        <!-- flyway-core in Flyway 9.x already includes PostgreSQL support.
+             The flyway-database-postgresql artifact only exists in Flyway 10+
+             which is not managed by Spring Boot 3.2.x. -->
+
+
+        <!-- Actuator -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
 
         <!-- JWT -->
         <dependency>
