@@ -7,6 +7,10 @@ spring:
   jpa:
     show-sql: false
 
+app:
+  jwt:
+    secret: test-only-secret-key-that-is-long-enough-for-hmac-sha256-algorithm
+
 logging:
   level:
     com.payflow: INFO
