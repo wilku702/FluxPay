@@ -38,6 +38,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.ok(TransactionResponse.from(ex.getExistingTransaction()));
     }
 
+    @ExceptionHandler(CurrencyMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleCurrencyMismatch(CurrencyMismatchException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(400, ex.getMessage()));
+    }
+
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleEmailExists(EmailAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
