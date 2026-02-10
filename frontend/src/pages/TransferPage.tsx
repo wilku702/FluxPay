@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAccounts } from '../api/accounts';
 import { transfer } from '../api/transactions';
+import { getApiErrorMessage } from '../utils/errors';
 import { useState } from 'react';
 
 const transferSchema = z.object({
@@ -116,7 +117,7 @@ export default function TransferPage() {
 
           {mutation.isError && (
             <p className="text-sm text-red-600">
-              {(mutation.error as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Transfer failed'}
+              {getApiErrorMessage(mutation.error, 'Transfer failed')}
             </p>
           )}
           {success && <p className="text-sm text-green-600">{success}</p>}
