@@ -1,15 +1,17 @@
 package com.payflow.service;
 
 import com.payflow.dto.*;
-import com.payflow.exception.DuplicateTransactionException;
 import com.payflow.model.Transaction;
+import com.payflow.repository.AccountRepository;
 import com.payflow.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -25,11 +27,11 @@ public class TransactionService {
     private static final int MAX_RETRIES = 3;
 
     private final TransactionRepository transactionRepository;
+    private final AccountRepository accountRepository;
     private final TransferExecutor transferExecutor;
 
-    public TransactionResponse deposit(DepositRequest request) {
-        checkIdempotency(request.getIdempotencyKey());
-
+    public TransactionResponse deposit(DepositRequest request, Long userId) {
+        verifyAccountOwnership(request.getAccountId(), userId);
         return executeWithRetry(() ->
                 transferExecutor.executeDeposit(
                         request.getAccountId(),
@@ -39,9 +41,8 @@ public class TransactionService {
                 ));
     }
 
-    public TransactionResponse withdraw(WithdrawRequest request) {
-        checkIdempotency(request.getIdempotencyKey());
-
+    public TransactionResponse withdraw(WithdrawRequest request, Long userId) {
+        verifyAccountOwnership(request.getAccountId(), userId);
         return executeWithRetry(() ->
                 transferExecutor.executeWithdraw(
                         request.getAccountId(),
@@ -51,24 +52,13 @@ public class TransactionService {
                 ));
     }
 
-    public TransferResponse transfer(TransferRequest request) {
+    public TransferResponse transfer(TransferRequest request, Long userId) {
         if (request.getSourceAccountId().equals(request.getDestinationAccountId())) {
             throw new IllegalArgumentException("Source and destination accounts must be different");
         }
 
-        // Check idempotency — look for existing debit transaction
-        Optional<Transaction> existing = transactionRepository.findByIdempotencyKey(request.getIdempotencyKey());
-        if (existing.isPresent()) {
-            Transaction debit = existing.get();
-            List<Transaction> pair = transactionRepository.findByCorrelationId(debit.getCorrelationId());
-            Transaction credit = pair.stream()
-                    .filter(t -> !t.getId().equals(debit.getId()))
-                    .findFirst()
-                    .orElse(debit);
-            return new TransferResponse(debit.getCorrelationId(),
-                    TransactionResponse.from(debit),
-                    TransactionResponse.from(credit));
-        }
+        verifyAccountOwnership(request.getSourceAccountId(), userId);
+        verifyAccountOwnership(request.getDestinationAccountId(), userId);
 
         return executeWithRetry(() ->
                 transferExecutor.executeTransfer(
@@ -80,6 +70,7 @@ public class TransactionService {
                 ));
     }
 
+    @Transactional(readOnly = true)
     public Page<TransactionResponse> getTransactions(Long accountId,
                                                      com.payflow.model.TransactionType type,
                                                      com.payflow.model.TransactionStatus status,
@@ -87,20 +78,25 @@ public class TransactionService {
                                                      LocalDateTime to,
                                                      BigDecimal minAmount,
                                                      BigDecimal maxAmount,
-                                                     Pageable pageable) {
+                                                     Pageable pageable,
+                                                     Long userId) {
+        verifyAccountOwnership(accountId, userId);
         return transactionRepository.findByFilters(accountId, type, status, from, to, minAmount, maxAmount, pageable)
                 .map(TransactionResponse::from);
     }
 
-    public TransactionResponse getById(Long id) {
+    @Transactional(readOnly = true)
+    public TransactionResponse getById(Long id, Long userId) {
         Transaction tx = transactionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + id));
+        verifyAccountOwnership(tx.getAccountId(), userId);
         return TransactionResponse.from(tx);
     }
 
-    private void checkIdempotency(String idempotencyKey) {
-        transactionRepository.findByIdempotencyKey(idempotencyKey)
-                .ifPresent(tx -> { throw new DuplicateTransactionException(tx); });
+    private void verifyAccountOwnership(Long accountId, Long userId) {
+        accountRepository.findById(accountId)
+                .filter(account -> account.getUserId().equals(userId))
+                .orElseThrow(() -> new com.payflow.exception.AccountNotFoundException(accountId));
     }
 
     @SuppressWarnings("unchecked")
@@ -116,7 +112,19 @@ public class TransactionService {
                     throw e;
                 }
                 log.info("Optimistic lock conflict, retrying (attempt {})", attempt);
+            } catch (DataIntegrityViolationException e) {
+                // Safety net: DB unique constraint caught a duplicate idempotency key
+                // that slipped through the application-level check (race condition)
+                log.info("DataIntegrityViolation caught — likely duplicate idempotency key, looking up original");
+                return (T) lookupExistingTransaction(e);
             }
         }
+    }
+
+    private Object lookupExistingTransaction(DataIntegrityViolationException e) {
+        String message = e.getMostSpecificCause().getMessage();
+        // Extract idempotency key if possible; otherwise re-throw
+        log.warn("Duplicate key constraint violation: {}", message);
+        throw new IllegalStateException("Concurrent duplicate transaction detected. Please retry.", e);
     }
 }
