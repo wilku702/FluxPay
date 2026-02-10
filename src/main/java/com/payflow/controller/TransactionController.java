@@ -12,31 +12,42 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/transactions")
 @RequiredArgsConstructor
 public class TransactionController {
 
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("createdAt", "amount", "type", "status");
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final TransactionService transactionService;
 
     @PostMapping("/deposit")
-    public ResponseEntity<TransactionResponse> deposit(@Valid @RequestBody DepositRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.deposit(request));
+    public ResponseEntity<TransactionResponse> deposit(@Valid @RequestBody DepositRequest request,
+                                                       Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.deposit(request, userId));
     }
 
     @PostMapping("/withdraw")
-    public ResponseEntity<TransactionResponse> withdraw(@Valid @RequestBody WithdrawRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.withdraw(request));
+    public ResponseEntity<TransactionResponse> withdraw(@Valid @RequestBody WithdrawRequest request,
+                                                        Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.withdraw(request, userId));
     }
 
     @PostMapping("/transfer")
-    public ResponseEntity<TransferResponse> transfer(@Valid @RequestBody TransferRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.transfer(request));
+    public ResponseEntity<TransferResponse> transfer(@Valid @RequestBody TransferRequest request,
+                                                     Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+        return ResponseEntity.status(HttpStatus.CREATED).body(transactionService.transfer(request, userId));
     }
 
     @GetMapping
@@ -51,15 +62,28 @@ public class TransactionController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
+            @RequestParam(defaultValue = "desc") String sortDir,
+            Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+
+        // Clamp page size
+        size = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+
+        // Validate sort field
+        if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
+            sortBy = "createdAt";
+        }
+
         Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         return ResponseEntity.ok(transactionService.getTransactions(
                 accountId, type, status, from, to, minAmount, maxAmount,
-                PageRequest.of(page, size, sort)));
+                PageRequest.of(page, size, sort), userId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TransactionResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(transactionService.getById(id));
+    public ResponseEntity<TransactionResponse> getById(@PathVariable Long id,
+                                                       Authentication authentication) {
+        Long userId = Long.parseLong(authentication.getName());
+        return ResponseEntity.ok(transactionService.getById(id, userId));
     }
 }
