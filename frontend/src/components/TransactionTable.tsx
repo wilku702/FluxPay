@@ -1,5 +1,4 @@
 import type { TransactionResponse } from '../types/api';
-import { useState } from 'react';
 
 interface Props {
   transactions: TransactionResponse[];
@@ -8,13 +7,10 @@ interface Props {
   sortDir?: string;
 }
 
-export default function TransactionTable({ transactions, onSort, sortBy, sortDir }: Props) {
-  const [_sortBy] = useState(sortBy || 'createdAt');
-  const [_sortDir] = useState(sortDir || 'desc');
-
+export default function TransactionTable({ transactions, onSort, sortBy = 'createdAt', sortDir = 'desc' }: Props) {
   const renderSortIcon = (field: string) => {
-    if (_sortBy !== field) return null;
-    return _sortDir === 'asc' ? ' \u2191' : ' \u2193';
+    if (sortBy !== field) return null;
+    return sortDir === 'asc' ? ' \u2191' : ' \u2193';
   };
 
   const handleSort = (field: string) => {
