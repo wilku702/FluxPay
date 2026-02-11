@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -34,16 +35,18 @@ class ConcurrencyTest {
 
     private Account sourceAccount;
     private Account destAccount;
+    private Long userId;
 
     @BeforeEach
     void setUp() {
         User user = userRepository.save(new User("conc-" + UUID.randomUUID() + "@test.com", "hash", "Test"));
+        userId = user.getId();
 
-        sourceAccount = new Account(user.getId(), "Source", "USD");
+        sourceAccount = new Account(userId, "Source", "USD");
         sourceAccount.setBalance(BigDecimal.valueOf(1000));
         sourceAccount = accountRepository.save(sourceAccount);
 
-        destAccount = new Account(user.getId(), "Destination", "USD");
+        destAccount = new Account(userId, "Destination", "USD");
         destAccount.setBalance(BigDecimal.ZERO);
         destAccount = accountRepository.save(destAccount);
     }
@@ -54,6 +57,7 @@ class ConcurrencyTest {
         BigDecimal transferAmount = BigDecimal.TEN;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(1);
+        AtomicInteger successCount = new AtomicInteger(0);
 
         List<Future<?>> futures = new ArrayList<>();
         for (int i = 0; i < threadCount; i++) {
@@ -63,7 +67,8 @@ class ConcurrencyTest {
                     latch.await();
                     transactionService.transfer(new TransferRequest(
                             sourceAccount.getId(), destAccount.getId(),
-                            transferAmount, "Concurrent transfer", key));
+                            transferAmount, "Concurrent transfer", key), userId);
+                    successCount.incrementAndGet();
                 } catch (Exception e) {
                     // Some may fail due to optimistic lock exhaustion — that's expected
                 }
@@ -87,7 +92,12 @@ class ConcurrencyTest {
         BigDecimal total = updatedSource.getBalance().add(updatedDest.getBalance());
         assertThat(total).isEqualByComparingTo(BigDecimal.valueOf(1000));
 
-        // At least some transfers succeeded
-        assertThat(updatedDest.getBalance()).isGreaterThan(BigDecimal.ZERO);
+        // Each successful transfer moved $10, verify exact balances
+        int succeeded = successCount.get();
+        assertThat(succeeded).isGreaterThan(0);
+        assertThat(updatedSource.getBalance())
+                .isEqualByComparingTo(BigDecimal.valueOf(1000 - (succeeded * 10L)));
+        assertThat(updatedDest.getBalance())
+                .isEqualByComparingTo(BigDecimal.valueOf(succeeded * 10L));
     }
 }
