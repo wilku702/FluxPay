@@ -11,18 +11,15 @@ import com.payflow.model.TransactionStatus;
 import com.payflow.model.TransactionType;
 import com.payflow.service.TransactionService;
 import com.payflow.util.JwtUtil;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -32,6 +29,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
@@ -41,8 +39,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Slice test for {@link TransactionController}.
+ *
+ * {@code @WithMockUser(username = "1")} places an authenticated principal whose
+ * name is {@code "1"} in the {@link org.springframework.security.core.context.SecurityContext}.
+ * This satisfies {@code Long.parseLong(authentication.getName())} in every controller
+ * method. The {@link JwtAuthenticationFilter} is replaced by a {@code @MockBean}
+ * no-op so no real JWT validation occurs.
+ */
 @WebMvcTest(TransactionController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@WithMockUser(username = "1")
 class TransactionControllerTest {
 
     @Autowired
@@ -81,18 +88,6 @@ class TransactionControllerTest {
             new TransactionResponse(4L, 2L, TransactionType.CREDIT, BigDecimal.valueOf(200),
                     "Transfer", CORRELATION_ID, TransactionStatus.COMPLETED, BigDecimal.valueOf(1200),
                     LocalDateTime.now()));
-
-    /**
-     * Place a UsernamePasswordAuthenticationToken with principal "1" in the
-     * SecurityContext before each test. The controllers call
-     * {@code Long.parseLong(authentication.getName())} to extract the user ID.
-     */
-    @BeforeEach
-    void setUpSecurityContext() {
-        UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken("1", null, Collections.emptyList());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-    }
 
     // -------------------------------------------------------------------------
     // POST /api/transactions/deposit
@@ -188,21 +183,20 @@ class TransactionControllerTest {
         PageImpl<TransactionResponse> page =
                 new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 100, Sort.by("createdAt").descending()), 0);
 
-        // The controller clamps size to MAX_PAGE_SIZE (100) — verify it calls the service
-        // with size 100 and not the requested 999
         when(transactionService.getTransactions(
                 eq(1L), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), any(), eq(USER_ID)))
                 .thenReturn(page);
 
+        // Request size=999 — the controller must clamp it to MAX_PAGE_SIZE (100)
         mockMvc.perform(get("/api/transactions")
                         .param("accountId", "1")
                         .param("size", "999"))
                 .andExpect(status().isOk());
 
-        // Verify the Pageable passed to the service has pageSize = 100
+        // Verify the Pageable passed to the service has pageSize clamped to 100
         verify(transactionService).getTransactions(
                 eq(1L), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
-                org.mockito.ArgumentMatchers.argThat(pageable -> pageable.getPageSize() == 100),
+                argThat(pageable -> pageable.getPageSize() == 100),
                 eq(USER_ID));
     }
 
@@ -215,7 +209,7 @@ class TransactionControllerTest {
                 eq(1L), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), any(), eq(USER_ID)))
                 .thenReturn(page);
 
-        // "invalid" is not in ALLOWED_SORT_FIELDS so the controller replaces it with "createdAt"
+        // "invalid" is not in ALLOWED_SORT_FIELDS — the controller replaces it with "createdAt"
         mockMvc.perform(get("/api/transactions")
                         .param("accountId", "1")
                         .param("sortBy", "invalid"))
@@ -223,8 +217,7 @@ class TransactionControllerTest {
 
         verify(transactionService).getTransactions(
                 eq(1L), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
-                org.mockito.ArgumentMatchers.argThat(pageable ->
-                        pageable.getSort().getOrderFor("createdAt") != null),
+                argThat(pageable -> pageable.getSort().getOrderFor("createdAt") != null),
                 eq(USER_ID));
     }
 
