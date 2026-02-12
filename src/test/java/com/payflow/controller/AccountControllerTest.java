@@ -1,23 +1,24 @@
 package com.payflow.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.payflow.config.JwtAuthenticationFilter;
 import com.payflow.dto.AccountResponse;
 import com.payflow.dto.CreateAccountRequest;
 import com.payflow.dto.UpdateAccountStatusRequest;
 import com.payflow.exception.AccountNotFoundException;
 import com.payflow.model.AccountStatus;
 import com.payflow.service.AccountService;
-import com.payflow.util.JwtUtil;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -34,9 +35,37 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Slice test for {@link AccountController}.
+ *
+ * A minimal {@link TestSecurityConfig} replaces the production {@code SecurityConfig}
+ * to keep all security filters running (so {@code @WithMockUser} can populate
+ * the {@link org.springframework.security.core.context.SecurityContext}) while
+ * permitting every request without requiring a JWT. This avoids the
+ * {@code JwtAuthenticationFilter @MockBean} pitfall where the mock intercepts the
+ * filter chain without forwarding it, resulting in empty response bodies.
+ *
+ * {@code @WithMockUser(username = "1")} satisfies
+ * {@code Long.parseLong(authentication.getName())} in every controller method.
+ */
 @WebMvcTest(AccountController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@Import(AccountControllerTest.TestSecurityConfig.class)
+@WithMockUser(username = "1")
 class AccountControllerTest {
+
+    /**
+     * Minimal security configuration for the test slice: permits all requests
+     * and disables CSRF so no {@code csrf()} post-processor is needed on
+     * mutating requests.
+     */
+    static class TestSecurityConfig {
+        @Bean
+        SecurityFilterChain testFilterChain(HttpSecurity http) throws Exception {
+            http.csrf(AbstractHttpConfigurer::disable)
+                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            return http.build();
+        }
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -47,31 +76,11 @@ class AccountControllerTest {
     @MockBean
     private AccountService accountService;
 
-    @MockBean
-    private JwtUtil jwtUtil;
-
-    @MockBean
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-
     private static final Long USER_ID = 1L;
 
     private static final AccountResponse STUB_ACCOUNT = new AccountResponse(
             1L, USER_ID, "Checking", BigDecimal.valueOf(1000), "USD",
             AccountStatus.ACTIVE, LocalDateTime.now());
-
-    /**
-     * The AccountController reads the authenticated user ID via
-     * {@code Long.parseLong(authentication.getName())}. We inject a
-     * UsernamePasswordAuthenticationToken whose principal name is "1" into the
-     * SecurityContext before every test so that the controller can parse it
-     * without Spring Security filters running.
-     */
-    @BeforeEach
-    void setUpSecurityContext() {
-        UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken("1", null, Collections.emptyList());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-    }
 
     // -------------------------------------------------------------------------
     // POST /api/accounts
