@@ -1,7 +1,6 @@
 package com.payflow.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.payflow.config.JwtAuthenticationFilter;
 import com.payflow.dto.AuthResponse;
 import com.payflow.dto.LoginRequest;
 import com.payflow.dto.RegisterRequest;
@@ -10,9 +9,9 @@ import com.payflow.service.AuthService;
 import com.payflow.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -22,8 +21,19 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Slice test for {@link AuthController}.
+ *
+ * {@link TestSecurityConfig} provides a minimal, permissive {@code SecurityFilterChain}
+ * that replaces the production config — CSRF disabled, no JWT filter, all requests
+ * permitted — so auth endpoints can be called without tokens.
+ *
+ * Only {@link AuthService} needs to be mocked; all other infrastructure beans
+ * ({@code JwtUtil}, {@code JwtAuthenticationFilter}) are satisfied by the
+ * test {@code application.yml} and the {@link TestSecurityConfig} respectively.
+ */
 @WebMvcTest(AuthController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@Import(TestSecurityConfig.class)
 class AuthControllerTest {
 
     @Autowired
@@ -35,12 +45,17 @@ class AuthControllerTest {
     @MockBean
     private AuthService authService;
 
-    // Required by SecurityConfig / JwtAuthenticationFilter even with addFilters = false
+    /**
+     * {@code JwtUtil} lives in the {@code util} package which is outside the
+     * {@code @WebMvcTest} component-scan scope, so it is not auto-detected.
+     * {@code JwtAuthenticationFilter} (in the {@code config} package) is
+     * auto-detected and needs a {@code JwtUtil} bean to satisfy its constructor.
+     * Providing a mock here satisfies that dependency without requiring real JWT
+     * configuration. The filter itself runs but never sees a Bearer header in
+     * these tests, so it simply passes the request through.
+     */
     @MockBean
     private JwtUtil jwtUtil;
-
-    @MockBean
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     private static final AuthResponse STUB_AUTH_RESPONSE =
             new AuthResponse("access-token", "refresh-token", 1L, "test@example.com", "Test User");
@@ -66,7 +81,7 @@ class AuthControllerTest {
 
     @Test
     void registerReturns400WithInvalidRequest() throws Exception {
-        // Empty body — all @NotBlank constraints will fire
+        // Empty body — all @NotBlank constraints fire
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
@@ -75,7 +90,7 @@ class AuthControllerTest {
 
     @Test
     void registerReturns400WithMissingEmailField() throws Exception {
-        // Password too short and no email
+        // Blank email and short password both violate constraints
         RegisterRequest request = new RegisterRequest("", "pw", "");
 
         mockMvc.perform(post("/api/auth/register")
