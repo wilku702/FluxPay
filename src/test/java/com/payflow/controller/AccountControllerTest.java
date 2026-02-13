@@ -7,18 +7,13 @@ import com.payflow.dto.UpdateAccountStatusRequest;
 import com.payflow.exception.AccountNotFoundException;
 import com.payflow.model.AccountStatus;
 import com.payflow.service.AccountService;
+import com.payflow.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -29,6 +24,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -38,34 +34,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Slice test for {@link AccountController}.
  *
- * A minimal {@link TestSecurityConfig} replaces the production {@code SecurityConfig}
- * to keep all security filters running (so {@code @WithMockUser} can populate
- * the {@link org.springframework.security.core.context.SecurityContext}) while
- * permitting every request without requiring a JWT. This avoids the
- * {@code JwtAuthenticationFilter @MockBean} pitfall where the mock intercepts the
- * filter chain without forwarding it, resulting in empty response bodies.
+ * {@link TestSecurityConfig} provides a permissive {@code SecurityFilterChain} that
+ * disables CSRF and permits all requests. Authentication is still supplied via
+ * {@code .with(user("1"))} on each request so that Spring MVC can resolve the
+ * {@code Authentication} parameter that the controller injects via
+ * {@code Long.parseLong(authentication.getName())}.
  *
- * {@code @WithMockUser(username = "1")} satisfies
- * {@code Long.parseLong(authentication.getName())} in every controller method.
+ * Only {@link AccountService} needs to be mocked; infrastructure beans are satisfied
+ * by the test {@code application.yml} and {@link TestSecurityConfig}.
  */
 @WebMvcTest(AccountController.class)
-@Import(AccountControllerTest.TestSecurityConfig.class)
-@WithMockUser(username = "1")
+@Import(TestSecurityConfig.class)
 class AccountControllerTest {
-
-    /**
-     * Minimal security configuration for the test slice: permits all requests
-     * and disables CSRF so no {@code csrf()} post-processor is needed on
-     * mutating requests.
-     */
-    static class TestSecurityConfig {
-        @Bean
-        SecurityFilterChain testFilterChain(HttpSecurity http) throws Exception {
-            http.csrf(AbstractHttpConfigurer::disable)
-                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
-            return http.build();
-        }
-    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -75,6 +55,18 @@ class AccountControllerTest {
 
     @MockBean
     private AccountService accountService;
+
+    /**
+     * {@code JwtUtil} lives in the {@code util} package which is outside the
+     * {@code @WebMvcTest} component-scan scope, so it is not auto-detected.
+     * {@code JwtAuthenticationFilter} (in the {@code config} package) is
+     * auto-detected and needs a {@code JwtUtil} bean to satisfy its constructor.
+     * Providing a mock here satisfies that dependency without requiring real JWT
+     * configuration. The filter itself runs but never sees a Bearer header in
+     * these tests, so it simply passes the request through.
+     */
+    @MockBean
+    private JwtUtil jwtUtil;
 
     private static final Long USER_ID = 1L;
 
@@ -93,6 +85,7 @@ class AccountControllerTest {
         CreateAccountRequest request = new CreateAccountRequest("Checking", "USD");
 
         mockMvc.perform(post("/api/accounts")
+                        .with(user("1"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -110,7 +103,7 @@ class AccountControllerTest {
     void getAllAccountsReturns200() throws Exception {
         when(accountService.getByUserId(USER_ID)).thenReturn(List.of(STUB_ACCOUNT));
 
-        mockMvc.perform(get("/api/accounts"))
+        mockMvc.perform(get("/api/accounts").with(user("1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$[0].id").value(1))
@@ -121,7 +114,7 @@ class AccountControllerTest {
     void getAllAccountsReturnsEmptyListWhenNoneExist() throws Exception {
         when(accountService.getByUserId(USER_ID)).thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("/api/accounts"))
+        mockMvc.perform(get("/api/accounts").with(user("1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$").isEmpty());
@@ -135,7 +128,7 @@ class AccountControllerTest {
     void getAccountByIdReturns200() throws Exception {
         when(accountService.getById(1L, USER_ID)).thenReturn(STUB_ACCOUNT);
 
-        mockMvc.perform(get("/api/accounts/1"))
+        mockMvc.perform(get("/api/accounts/1").with(user("1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.accountName").value("Checking"))
@@ -146,7 +139,7 @@ class AccountControllerTest {
     void getAccountReturns404WhenNotFound() throws Exception {
         when(accountService.getById(99L, USER_ID)).thenThrow(new AccountNotFoundException(99L));
 
-        mockMvc.perform(get("/api/accounts/99"))
+        mockMvc.perform(get("/api/accounts/99").with(user("1")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.message").value("Account not found: 99"));
@@ -168,6 +161,7 @@ class AccountControllerTest {
         UpdateAccountStatusRequest request = new UpdateAccountStatusRequest(AccountStatus.FROZEN);
 
         mockMvc.perform(patch("/api/accounts/1/status")
+                        .with(user("1"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
