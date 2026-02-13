@@ -1,7 +1,6 @@
 package com.payflow.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.payflow.config.JwtAuthenticationFilter;
 import com.payflow.dto.DepositRequest;
 import com.payflow.dto.TransactionResponse;
 import com.payflow.dto.TransferRequest;
@@ -15,11 +14,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -34,6 +33,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -42,14 +42,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Slice test for {@link TransactionController}.
  *
- * {@code @WithMockUser(username = "1")} places an authenticated principal whose
- * name is {@code "1"} in the {@link org.springframework.security.core.context.SecurityContext}.
- * This satisfies {@code Long.parseLong(authentication.getName())} in every controller
- * method. The {@link JwtAuthenticationFilter} is replaced by a {@code @MockBean}
- * no-op so no real JWT validation occurs.
+ * {@link TestSecurityConfig} provides a permissive {@code SecurityFilterChain} that
+ * disables CSRF and permits all requests. Authentication is supplied via
+ * {@code .with(user("1"))} on each request so that Spring MVC resolves the
+ * {@code Authentication} parameter — the principal name {@code "1"} satisfies
+ * {@code Long.parseLong(authentication.getName())} == {@code 1L}.
+ *
+ * Only {@link TransactionService} needs to be mocked; infrastructure beans are
+ * satisfied by the test {@code application.yml} and {@link TestSecurityConfig}.
  */
 @WebMvcTest(TransactionController.class)
-@WithMockUser(username = "1")
+@Import(TestSecurityConfig.class)
 class TransactionControllerTest {
 
     @Autowired
@@ -61,11 +64,17 @@ class TransactionControllerTest {
     @MockBean
     private TransactionService transactionService;
 
+    /**
+     * {@code JwtUtil} lives in the {@code util} package which is outside the
+     * {@code @WebMvcTest} component-scan scope, so it is not auto-detected.
+     * {@code JwtAuthenticationFilter} (in the {@code config} package) is
+     * auto-detected and needs a {@code JwtUtil} bean to satisfy its constructor.
+     * Providing a mock here satisfies that dependency without requiring real JWT
+     * configuration. The filter itself runs but never sees a Bearer header in
+     * these tests, so it simply passes the request through.
+     */
     @MockBean
     private JwtUtil jwtUtil;
-
-    @MockBean
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     private static final Long USER_ID = 1L;
     private static final UUID CORRELATION_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
@@ -100,6 +109,7 @@ class TransactionControllerTest {
         DepositRequest request = new DepositRequest(1L, BigDecimal.valueOf(500), "Deposit", "idem-key-1");
 
         mockMvc.perform(post("/api/transactions/deposit")
+                        .with(user("1"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -113,6 +123,7 @@ class TransactionControllerTest {
     void depositReturns400WithInvalidRequest() throws Exception {
         // Empty body — required fields are null so Bean Validation fires
         mockMvc.perform(post("/api/transactions/deposit")
+                        .with(user("1"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
@@ -129,6 +140,7 @@ class TransactionControllerTest {
         WithdrawRequest request = new WithdrawRequest(1L, BigDecimal.valueOf(100), "Withdraw", "idem-key-2");
 
         mockMvc.perform(post("/api/transactions/withdraw")
+                        .with(user("1"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -149,6 +161,7 @@ class TransactionControllerTest {
         TransferRequest request = new TransferRequest(1L, 2L, BigDecimal.valueOf(200), "Transfer", "idem-key-3");
 
         mockMvc.perform(post("/api/transactions/transfer")
+                        .with(user("1"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -171,7 +184,9 @@ class TransactionControllerTest {
                 eq(1L), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), any(), eq(USER_ID)))
                 .thenReturn(page);
 
-        mockMvc.perform(get("/api/transactions").param("accountId", "1"))
+        mockMvc.perform(get("/api/transactions")
+                        .with(user("1"))
+                        .param("accountId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content[0].id").value(1))
@@ -189,6 +204,7 @@ class TransactionControllerTest {
 
         // Request size=999 — the controller must clamp it to MAX_PAGE_SIZE (100)
         mockMvc.perform(get("/api/transactions")
+                        .with(user("1"))
                         .param("accountId", "1")
                         .param("size", "999"))
                 .andExpect(status().isOk());
@@ -211,6 +227,7 @@ class TransactionControllerTest {
 
         // "invalid" is not in ALLOWED_SORT_FIELDS — the controller replaces it with "createdAt"
         mockMvc.perform(get("/api/transactions")
+                        .with(user("1"))
                         .param("accountId", "1")
                         .param("sortBy", "invalid"))
                 .andExpect(status().isOk());
@@ -229,7 +246,7 @@ class TransactionControllerTest {
     void getTransactionByIdReturns200() throws Exception {
         when(transactionService.getById(1L, USER_ID)).thenReturn(STUB_CREDIT_TX);
 
-        mockMvc.perform(get("/api/transactions/1"))
+        mockMvc.perform(get("/api/transactions/1").with(user("1")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.type").value("CREDIT"))
