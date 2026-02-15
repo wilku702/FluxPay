@@ -36,6 +36,8 @@ jobs:
 
       - name: Run tests and verify
         run: mvn verify -B
+        env:
+          JWT_SECRET: ci-test-secret-key-that-is-long-enough-for-hmac-sha256-algorithm
 
       - name: Upload JaCoCo report
         if: always()
