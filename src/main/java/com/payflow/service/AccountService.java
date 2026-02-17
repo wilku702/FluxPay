@@ -5,6 +5,7 @@ import com.payflow.dto.CreateAccountRequest;
 import com.payflow.dto.UpdateAccountStatusRequest;
 import com.payflow.exception.AccountNotFoundException;
 import com.payflow.model.Account;
+import com.payflow.model.AccountStatus;
 import com.payflow.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -50,8 +51,18 @@ public class AccountService {
         if (!account.getUserId().equals(userId)) {
             throw new AccountNotFoundException(id);
         }
+        validateStatusTransition(account.getStatus(), request.getStatus());
         account.setStatus(request.getStatus());
         account = accountRepository.save(account);
         return AccountResponse.from(account);
+    }
+
+    private void validateStatusTransition(AccountStatus current, AccountStatus target) {
+        if (current == AccountStatus.CLOSED) {
+            throw new IllegalArgumentException("Cannot change status of a closed account");
+        }
+        if (current == target) {
+            throw new IllegalArgumentException("Account is already " + current);
+        }
     }
 }
