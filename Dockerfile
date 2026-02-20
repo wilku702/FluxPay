@@ -5,8 +5,8 @@ RUN mvn dependency:go-offline -B
 COPY src ./src
 RUN mvn clean package -DskipTests -B
 
-FROM eclipse-temurin:17-jre-alpine
-RUN addgroup -S app && adduser -S app -G app
+FROM eclipse-temurin:17-jre
+RUN groupadd -r app && useradd -r -g app --no-log-init app
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 USER app
