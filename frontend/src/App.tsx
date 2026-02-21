@@ -9,6 +9,8 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import AccountDetailPage from './pages/AccountDetailPage';
 import TransferPage from './pages/TransferPage';
+import DepositWithdrawPage from './pages/DepositWithdrawPage';
+import ProfilePage from './pages/ProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,6 +34,8 @@ function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/accounts/:id" element={<AccountDetailPage />} />
                 <Route path="/transfer" element={<TransferPage />} />
+                <Route path="/deposit-withdraw" element={<DepositWithdrawPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
               </Route>
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
