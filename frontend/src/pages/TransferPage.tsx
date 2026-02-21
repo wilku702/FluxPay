@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAccounts } from '../api/accounts';
 import { transfer } from '../api/transactions';
 import { getApiErrorMessage } from '../utils/errors';
+import { formatBalance } from '../utils/currency';
 import { useState } from 'react';
 
 const transferSchema = z.object({
@@ -74,7 +75,7 @@ export default function TransferPage() {
               <option value="">Select source account</option>
               {activeAccounts.map(a => (
                 <option key={a.id} value={a.id}>
-                  {a.accountName} (${a.balance.toFixed(2)})
+                  {a.accountName} ({formatBalance(a.balance, a.currency)})
                 </option>
               ))}
             </select>
@@ -98,7 +99,7 @@ export default function TransferPage() {
               <option value="">Select destination account</option>
               {activeAccounts.map(a => (
                 <option key={a.id} value={a.id}>
-                  {a.accountName} (${a.balance.toFixed(2)})
+                  {a.accountName} ({formatBalance(a.balance, a.currency)})
                 </option>
               ))}
             </select>
