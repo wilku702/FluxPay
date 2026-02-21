@@ -56,17 +56,20 @@ class AccountControllerTest {
     @MockBean
     private AccountService accountService;
 
-    /**
-     * {@code JwtUtil} lives in the {@code util} package which is outside the
-     * {@code @WebMvcTest} component-scan scope, so it is not auto-detected.
-     * {@code JwtAuthenticationFilter} (in the {@code config} package) is
-     * auto-detected and needs a {@code JwtUtil} bean to satisfy its constructor.
-     * Providing a mock here satisfies that dependency without requiring real JWT
-     * configuration. The filter itself runs but never sees a Bearer header in
-     * these tests, so it simply passes the request through.
-     */
     @MockBean
     private JwtUtil jwtUtil;
+
+    @MockBean
+    private com.payflow.service.RateLimitService rateLimitService;
+
+    @MockBean
+    private com.payflow.service.MetricsService metricsService;
+
+    @org.junit.jupiter.api.BeforeEach
+    void setUp() {
+        org.mockito.Mockito.when(rateLimitService.isAllowed(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(new com.payflow.service.RateLimitService.RateLimitResult(true, 100, 99, 0));
+    }
 
     private static final Long USER_ID = 1L;
 
