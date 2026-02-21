@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { motion } from 'motion/react';
 import { getAccounts } from '../api/accounts';
 import { useAuth } from '../context/AuthContext';
 import AccountCard from '../components/AccountCard';
 import QuickTransfer from '../components/QuickTransfer';
 import CreateAccountModal from '../components/CreateAccountModal';
+import AnimatedPage from '../components/animation/AnimatedPage';
+import StaggeredList from '../components/animation/StaggeredList';
+import AnimatedNumber from '../components/animation/AnimatedNumber';
+import Skeleton from '../components/animation/SkeletonShimmer';
 import { formatBalance } from '../utils/currency';
 
 export default function DashboardPage() {
@@ -27,19 +32,19 @@ export default function DashboardPage() {
     return (
       <div>
         <div className="mb-8">
-          <div className="h-8 w-64 bg-surface-elevated rounded-lg animate-pulse" />
-          <div className="h-5 w-40 bg-surface-elevated rounded-lg animate-pulse mt-2" />
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-5 w-40 mt-2" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="bg-surface-elevated border border-border-primary rounded-xl p-6">
               <div className="flex justify-between">
-                <div className="h-4 w-28 bg-surface-hover rounded animate-pulse" />
-                <div className="h-5 w-16 bg-surface-hover rounded-full animate-pulse" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-5 w-16 rounded-full" />
               </div>
-              <div className="h-9 w-36 bg-surface-hover rounded animate-pulse mt-6" />
+              <Skeleton className="h-9 w-36 mt-6" />
               <div className="border-t border-border-primary mt-5 pt-4">
-                <div className="h-3 w-24 bg-surface-hover rounded animate-pulse" />
+                <Skeleton className="h-3 w-24" />
               </div>
             </div>
           ))}
@@ -63,7 +68,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div>
+    <AnimatedPage>
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -75,14 +80,18 @@ export default function DashboardPage() {
                 <span key={currency}>
                   {i > 0 && <span className="text-text-muted mx-1">/</span>}
                   <span className="text-text-primary font-semibold tabular-nums">
-                    {formatBalance(total, currency)}
+                    <AnimatedNumber
+                      value={total}
+                      formatFn={(n) => formatBalance(n, currency)}
+                    />
                   </span>
                 </span>
               ))}
             </p>
           )}
         </div>
-        <button
+        <motion.button
+          whileTap={{ scale: 0.97 }}
           onClick={() => setShowCreateModal(true)}
           className="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
         >
@@ -90,18 +99,18 @@ export default function DashboardPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
           New Account
-        </button>
+        </motion.button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">Your Accounts</h2>
           {accounts && accounts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <StaggeredList stagger={0.05} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {accounts.map((account) => (
                 <AccountCard key={account.id} account={account} />
               ))}
-            </div>
+            </StaggeredList>
           ) : (
             <div className="bg-surface-elevated border border-border-primary rounded-xl p-12 text-center">
               <div className="w-12 h-12 rounded-xl bg-surface-hover flex items-center justify-center mx-auto mb-4">
@@ -113,12 +122,13 @@ export default function DashboardPage() {
               <p className="text-sm text-text-secondary mt-1">
                 Accounts hold a balance in a single currency and record all transactions.
               </p>
-              <button
+              <motion.button
+                whileTap={{ scale: 0.97 }}
                 onClick={() => setShowCreateModal(true)}
                 className="mt-5 bg-accent hover:bg-accent-hover text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
               >
                 Create Account
-              </button>
+              </motion.button>
             </div>
           )}
         </div>
@@ -130,6 +140,6 @@ export default function DashboardPage() {
         </div>
       </div>
       {showCreateModal && <CreateAccountModal onClose={() => setShowCreateModal(false)} />}
-    </div>
+    </AnimatedPage>
   );
 }

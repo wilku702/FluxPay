@@ -10,6 +10,9 @@ import { formatBalance } from '../utils/currency';
 import { accountStatusConfig } from '../utils/statusConfig';
 import AccountStatusModal from '../components/AccountStatusModal';
 import { exportTransactions } from '../api/transactions';
+import AnimatedPage from '../components/animation/AnimatedPage';
+import AnimatedNumber from '../components/animation/AnimatedNumber';
+import Skeleton from '../components/animation/SkeletonShimmer';
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -58,22 +61,22 @@ export default function AccountDetailPage() {
         <div className="bg-surface-elevated border border-border-primary rounded-xl p-6 mb-6">
           <div className="flex justify-between items-start">
             <div>
-              <div className="h-7 w-48 bg-surface-hover rounded-lg animate-pulse" />
-              <div className="h-4 w-16 bg-surface-hover rounded animate-pulse mt-2" />
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-4 w-16 mt-2" />
             </div>
-            <div className="h-6 w-20 bg-surface-hover rounded-full animate-pulse" />
+            <Skeleton className="h-6 w-20 rounded-full" />
           </div>
-          <div className="h-10 w-44 bg-surface-hover rounded-lg animate-pulse mt-6" />
+          <Skeleton className="h-10 w-44 mt-6" />
         </div>
         <div className="bg-surface-elevated border border-border-primary rounded-xl overflow-hidden">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="flex items-center gap-4 px-4 py-3.5 border-b border-border-primary last:border-0">
-              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
-              <div className="h-5 w-14 bg-surface-hover rounded-full animate-pulse" />
-              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
-              <div className="h-4 w-32 bg-surface-hover rounded animate-pulse flex-1" />
-              <div className="h-5 w-20 bg-surface-hover rounded-full animate-pulse" />
-              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-5 w-14 rounded-full" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-32 flex-1" />
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-4 w-20" />
             </div>
           ))}
         </div>
@@ -97,7 +100,7 @@ export default function AccountDetailPage() {
   const status = accountStatusConfig[account.status] || accountStatusConfig.CLOSED;
 
   return (
-    <div>
+    <AnimatedPage>
       {/* Account header card */}
       <div className="bg-surface-elevated border border-border-primary rounded-xl p-6 mb-6">
         <div className="flex justify-between items-start">
@@ -121,7 +124,10 @@ export default function AccountDetailPage() {
         <div className="mt-5">
           <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Available Balance</p>
           <p className="text-4xl font-bold text-text-primary tabular-nums tracking-tight">
-            {formatBalance(account.balance, account.currency)}
+            <AnimatedNumber
+              value={account.balance}
+              formatFn={(n) => formatBalance(n, account.currency)}
+            />
           </p>
         </div>
       </div>
@@ -144,12 +150,12 @@ export default function AccountDetailPage() {
         <div className="bg-surface-elevated border border-border-primary rounded-xl overflow-hidden">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="flex items-center gap-4 px-4 py-3.5 border-b border-border-primary last:border-0">
-              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
-              <div className="h-5 w-14 bg-surface-hover rounded-full animate-pulse" />
-              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
-              <div className="h-4 w-32 bg-surface-hover rounded animate-pulse flex-1" />
-              <div className="h-5 w-20 bg-surface-hover rounded-full animate-pulse" />
-              <div className="h-4 w-20 bg-surface-hover rounded animate-pulse" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-5 w-14 rounded-full" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-32 flex-1" />
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-4 w-20" />
             </div>
           ))}
         </div>
@@ -175,6 +181,6 @@ export default function AccountDetailPage() {
       {showStatusModal && account && (
         <AccountStatusModal account={account} onClose={() => setShowStatusModal(false)} />
       )}
-    </div>
+    </AnimatedPage>
   );
 }
