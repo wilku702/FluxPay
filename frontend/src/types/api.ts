@@ -44,6 +44,12 @@ export interface Page<T> {
   last: boolean;
 }
 
+export interface UserProfileResponse {
+  id: number;
+  email: string;
+  fullName: string;
+}
+
 export interface ErrorResponse {
   status: number;
   message: string;
