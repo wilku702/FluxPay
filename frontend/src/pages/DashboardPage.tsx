@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getAccounts } from '../api/accounts';
 import { useAuth } from '../context/AuthContext';
 import AccountCard from '../components/AccountCard';
 import QuickTransfer from '../components/QuickTransfer';
+import CreateAccountModal from '../components/CreateAccountModal';
 
 export default function DashboardPage() {
   const { fullName } = useAuth();
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { data: accounts, isLoading, error } = useQuery({
     queryKey: ['accounts'],
     queryFn: getAccounts,
@@ -57,16 +60,27 @@ export default function DashboardPage() {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-text-primary">Welcome back, {firstName}</h1>
-        {accounts && accounts.length > 0 && (
-          <p className="text-text-secondary mt-1">
-            Total balance:{' '}
-            <span className="text-text-primary font-semibold tabular-nums">
-              ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </p>
-        )}
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-semibold text-text-primary">Welcome back, {firstName}</h1>
+          {accounts && accounts.length > 0 && (
+            <p className="text-text-secondary mt-1">
+              Total balance:{' '}
+              <span className="text-text-primary font-semibold tabular-nums">
+                ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </p>
+          )}
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          New Account
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -81,12 +95,18 @@ export default function DashboardPage() {
           ) : (
             <div className="bg-surface-elevated border border-border-primary rounded-xl p-12 text-center">
               <div className="w-12 h-12 rounded-xl bg-surface-hover flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
                 </svg>
               </div>
               <p className="text-sm font-medium text-text-primary">No accounts yet</p>
               <p className="text-sm text-text-secondary mt-1">Create one to get started.</p>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="mt-4 bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                Create Account
+              </button>
             </div>
           )}
         </div>
@@ -97,6 +117,7 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      {showCreateModal && <CreateAccountModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 }
