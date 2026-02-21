@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class TransactionServiceTest {
@@ -33,6 +34,8 @@ class TransactionServiceTest {
     private AccountRepository accountRepository;
     @Mock
     private TransferExecutor transferExecutor;
+    @Mock
+    private MetricsService metricsService;
 
     @InjectMocks
     private TransactionService transactionService;
@@ -48,7 +51,13 @@ class TransactionServiceTest {
     private static final Long USER_ID = 1L;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
+        // MetricsService.timeTransaction() needs to execute the callable and return its result
+        lenient().when(metricsService.timeTransaction(any())).thenAnswer(inv -> {
+            java.util.concurrent.Callable<?> callable = inv.getArgument(0);
+            return callable.call();
+        });
+
         transferRequest = new TransferRequest(1L, 2L, BigDecimal.valueOf(100), "Test transfer", "idem-key-1");
         depositRequest = new DepositRequest(1L, BigDecimal.valueOf(500), "Test deposit", "idem-dep-1");
         withdrawRequest = new WithdrawRequest(1L, BigDecimal.valueOf(50), "Test withdraw", "idem-wd-1");

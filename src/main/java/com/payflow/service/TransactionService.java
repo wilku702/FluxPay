@@ -30,6 +30,7 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final TransferExecutor transferExecutor;
+    private final MetricsService metricsService;
 
     public TransactionResponse deposit(DepositRequest request, Long userId) {
         verifyAccountOwnership(request.getAccountId(), userId);
@@ -121,11 +122,21 @@ public class TransactionService {
         int attempt = 0;
         while (true) {
             try {
-                return operation.get();
+                T result;
+                try {
+                    result = metricsService.timeTransaction(operation::get);
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                metricsService.recordTransactionSuccess();
+                return result;
             } catch (ObjectOptimisticLockingFailureException e) {
                 attempt++;
                 if (attempt >= MAX_RETRIES) {
                     log.warn("Optimistic lock failed after {} retries", MAX_RETRIES);
+                    metricsService.recordTransactionFailure();
                     throw e;
                 }
                 log.info("Optimistic lock conflict, retrying (attempt {})", attempt);
@@ -134,6 +145,9 @@ public class TransactionService {
                 // that slipped through the application-level check (race condition)
                 log.info("DataIntegrityViolation caught — likely duplicate idempotency key, looking up original");
                 return (T) lookupExistingTransaction(e);
+            } catch (RuntimeException e) {
+                metricsService.recordTransactionFailure();
+                throw e;
             }
         }
     }

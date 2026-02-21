@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final BalanceCacheService balanceCacheService;
 
     @Transactional
     public AccountResponse create(Long userId, CreateAccountRequest request) {
@@ -34,6 +35,7 @@ public class AccountService {
         if (!account.getUserId().equals(userId)) {
             throw new AccountNotFoundException(id);
         }
+        balanceCacheService.put(account.getId(), account.getBalance());
         return AccountResponse.from(account);
     }
 
@@ -54,6 +56,7 @@ public class AccountService {
         validateStatusTransition(account.getStatus(), request.getStatus());
         account.setStatus(request.getStatus());
         account = accountRepository.save(account);
+        balanceCacheService.evict(account.getId());
         return AccountResponse.from(account);
     }
 

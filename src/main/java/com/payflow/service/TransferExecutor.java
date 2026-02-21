@@ -2,6 +2,10 @@ package com.payflow.service;
 
 import com.payflow.dto.TransferResponse;
 import com.payflow.dto.TransactionResponse;
+import com.payflow.event.TransactionEvent;
+import com.payflow.event.TransactionEvent.EventType;
+import com.payflow.event.TransactionEvent.TransactionEventType;
+import com.payflow.event.TransactionEventPublisher;
 import com.payflow.exception.AccountFrozenException;
 import com.payflow.exception.AccountNotFoundException;
 import com.payflow.exception.CurrencyMismatchException;
@@ -17,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +33,8 @@ public class TransferExecutor {
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final BalanceCacheService balanceCacheService;
+    private final TransactionEventPublisher eventPublisher;
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public TransferResponse executeTransfer(Long sourceId, Long destId, BigDecimal amount,
@@ -83,6 +90,11 @@ public class TransferExecutor {
         debit.setBalanceAfter(source.getBalance());
         debit = transactionRepository.save(debit);
 
+        balanceCacheService.put(sourceId, source.getBalance());
+        eventPublisher.publish(new TransactionEvent(debit.getId(), sourceId,
+                EventType.TRANSFER_DEBIT, TransactionEventType.DEBIT,
+                amount, source.getBalance(), correlationId, LocalDateTime.now()));
+
         log.info("Transfer debit: accountId={}, amount={}, balanceAfter={}, correlationId={}",
                 sourceId, amount, source.getBalance(), correlationId);
 
@@ -100,6 +112,11 @@ public class TransferExecutor {
         credit.setStatus(TransactionStatus.COMPLETED);
         credit.setBalanceAfter(dest.getBalance());
         credit = transactionRepository.save(credit);
+
+        balanceCacheService.put(destId, dest.getBalance());
+        eventPublisher.publish(new TransactionEvent(credit.getId(), destId,
+                EventType.TRANSFER_CREDIT, TransactionEventType.CREDIT,
+                amount, dest.getBalance(), correlationId, LocalDateTime.now()));
 
         log.info("Transfer credit: accountId={}, amount={}, balanceAfter={}, correlationId={}",
                 destId, amount, dest.getBalance(), correlationId);
@@ -139,6 +156,11 @@ public class TransferExecutor {
         tx.setBalanceAfter(account.getBalance());
         tx = transactionRepository.save(tx);
 
+        balanceCacheService.put(accountId, account.getBalance());
+        eventPublisher.publish(new TransactionEvent(tx.getId(), accountId,
+                EventType.DEPOSIT, TransactionEventType.CREDIT,
+                amount, account.getBalance(), null, LocalDateTime.now()));
+
         log.info("Deposit: accountId={}, amount={}, balanceAfter={}", accountId, amount, account.getBalance());
 
         return TransactionResponse.from(tx);
@@ -176,6 +198,11 @@ public class TransferExecutor {
         tx.setStatus(TransactionStatus.COMPLETED);
         tx.setBalanceAfter(account.getBalance());
         tx = transactionRepository.save(tx);
+
+        balanceCacheService.put(accountId, account.getBalance());
+        eventPublisher.publish(new TransactionEvent(tx.getId(), accountId,
+                EventType.WITHDRAWAL, TransactionEventType.DEBIT,
+                amount, account.getBalance(), null, LocalDateTime.now()));
 
         log.info("Withdrawal: accountId={}, amount={}, balanceAfter={}", accountId, amount, account.getBalance());
 

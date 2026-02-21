@@ -27,6 +27,8 @@ class AccountServiceTest {
 
     @Mock
     private AccountRepository accountRepository;
+    @Mock
+    private BalanceCacheService balanceCacheService;
 
     @InjectMocks
     private AccountService accountService;
