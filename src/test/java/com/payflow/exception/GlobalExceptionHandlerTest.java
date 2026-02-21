@@ -70,16 +70,14 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void handleInsufficientFundsReturns409() {
-        InsufficientFundsException ex =
-                new InsufficientFundsException(BigDecimal.valueOf(50), BigDecimal.valueOf(200));
+        InsufficientFundsException ex = new InsufficientFundsException();
 
         ResponseEntity<ErrorResponse> response = handler.handleInsufficientFunds(ex);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().getStatus()).isEqualTo(409);
-        assertThat(response.getBody().getMessage()).contains("50");
-        assertThat(response.getBody().getMessage()).contains("200");
+        assertThat(response.getBody().getMessage()).contains("Insufficient funds");
     }
 
     // -------------------------------------------------------------------------

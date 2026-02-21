@@ -136,7 +136,7 @@ class TransactionServiceTest {
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
         when(accountRepository.findById(2L)).thenReturn(Optional.of(destAccount));
         when(transferExecutor.executeTransfer(any(), any(), any(), any(), any()))
-                .thenThrow(new InsufficientFundsException(BigDecimal.valueOf(50), BigDecimal.valueOf(100)));
+                .thenThrow(new InsufficientFundsException());
 
         assertThatThrownBy(() -> transactionService.transfer(transferRequest, USER_ID))
                 .isInstanceOf(InsufficientFundsException.class);
@@ -204,7 +204,7 @@ class TransactionServiceTest {
     void withdrawThrowsOnInsufficientFunds() {
         when(accountRepository.findById(1L)).thenReturn(Optional.of(sourceAccount));
         when(transferExecutor.executeWithdraw(any(), any(), any(), any()))
-                .thenThrow(new InsufficientFundsException(BigDecimal.valueOf(10), BigDecimal.valueOf(50)));
+                .thenThrow(new InsufficientFundsException());
 
         assertThatThrownBy(() -> transactionService.withdraw(withdrawRequest, USER_ID))
                 .isInstanceOf(InsufficientFundsException.class);

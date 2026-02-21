@@ -63,7 +63,7 @@ public class TransferExecutor {
             throw new CurrencyMismatchException(source.getCurrency(), dest.getCurrency());
         }
         if (source.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientFundsException(source.getBalance(), amount);
+            throw new InsufficientFundsException();
         }
 
         UUID correlationId = UUID.randomUUID();
@@ -161,7 +161,7 @@ public class TransferExecutor {
             throw new AccountFrozenException(accountId);
         }
         if (account.getBalance().compareTo(amount) < 0) {
-            throw new InsufficientFundsException(account.getBalance(), amount);
+            throw new InsufficientFundsException();
         }
 
         account.setBalance(account.getBalance().subtract(amount).setScale(4, RoundingMode.HALF_UP));
