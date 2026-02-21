@@ -1,7 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createAccount } from '../api/accounts';
+import { getApiErrorMessage } from '../utils/errors';
 
 interface Props {
   onClose: () => void;
@@ -9,29 +13,41 @@ interface Props {
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'CHF', 'JPY', 'CAD', 'AUD', 'PLN'];
 
+const accountSchema = z.object({
+  accountName: z.string()
+    .trim()
+    .min(1, 'Account name is required')
+    .max(50, 'Account name must be 50 characters or fewer'),
+  currency: z.string().min(1, 'Currency is required'),
+});
+
+type AccountFormData = z.infer<typeof accountSchema>;
+
 const inputClass = "w-full bg-surface-secondary border border-border-primary text-text-primary rounded-lg px-4 py-2.5 text-sm placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors";
 
 export default function CreateAccountModal({ onClose }: Props) {
-  const [accountName, setAccountName] = useState('');
-  const [currency, setCurrency] = useState('USD');
-  const [error, setError] = useState('');
   const queryClient = useQueryClient();
   const dialogRef = useRef<HTMLDivElement>(null);
   const isPendingRef = useRef(false);
 
+  const { register, handleSubmit, formState: { errors } } = useForm<AccountFormData>({
+    resolver: zodResolver(accountSchema),
+    defaultValues: { accountName: '', currency: 'USD' },
+  });
+
   const mutation = useMutation({
-    mutationFn: () => createAccount(accountName.trim(), currency),
+    mutationFn: (data: AccountFormData) => createAccount(data.accountName, data.currency),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       onClose();
     },
-    onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Failed to create account';
-      setError(msg);
-    },
   });
 
   isPendingRef.current = mutation.isPending;
+
+  const onSubmit = (data: AccountFormData) => {
+    mutation.mutate(data);
+  };
 
   // Scroll lock + focus restore
   useEffect(() => {
@@ -77,12 +93,6 @@ export default function CreateAccountModal({ onClose }: Props) {
     return () => dialog.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    mutation.mutate();
-  };
-
   const safeClose = mutation.isPending ? undefined : onClose;
 
   return createPortal(
@@ -110,7 +120,7 @@ export default function CreateAccountModal({ onClose }: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <label htmlFor="accountName" className="block text-sm font-medium text-text-secondary mb-1.5">
               Account Name
@@ -118,14 +128,15 @@ export default function CreateAccountModal({ onClose }: Props) {
             <input
               id="accountName"
               type="text"
-              value={accountName}
-              onChange={(e) => setAccountName(e.target.value)}
+              {...register('accountName')}
               placeholder="e.g. Main Checking"
               maxLength={50}
               className={inputClass}
-              required
               autoFocus
             />
+            {errors.accountName && (
+              <p className="mt-1.5 text-sm text-danger">{errors.accountName.message}</p>
+            )}
           </div>
 
           <div>
@@ -134,18 +145,25 @@ export default function CreateAccountModal({ onClose }: Props) {
             </label>
             <select
               id="currency"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
+              {...register('currency')}
               className={inputClass}
             >
               {CURRENCIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+            {errors.currency && (
+              <p className="mt-1.5 text-sm text-danger">{errors.currency.message}</p>
+            )}
           </div>
 
-          {error && (
-            <div className="bg-danger-muted text-danger rounded-lg p-3 text-sm">{error}</div>
+          {mutation.isError && (
+            <div className="bg-danger-muted text-danger rounded-lg p-3 text-sm flex items-start gap-2">
+              <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              {getApiErrorMessage(mutation.error, 'Failed to create account')}
+            </div>
           )}
 
           <div className="flex gap-3 pt-2">
