@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { transfer } from '../api/transactions';
 import type { AccountResponse } from '../types/api';
+import { formatBalance } from '../utils/currency';
 
 interface Props {
   accounts: AccountResponse[];
@@ -60,14 +61,14 @@ export default function QuickTransfer({ accounts }: Props) {
           className={inputClass} required>
           <option value="">From account...</option>
           {activeAccounts.map(a => (
-            <option key={a.id} value={a.id}>{a.accountName} (${a.balance.toFixed(2)})</option>
+            <option key={a.id} value={a.id}>{a.accountName} ({formatBalance(a.balance, a.currency)})</option>
           ))}
         </select>
         <select value={destId} onChange={(e) => setDestId(e.target.value)}
           className={inputClass} required>
           <option value="">To account...</option>
           {activeAccounts.map(a => (
-            <option key={a.id} value={a.id}>{a.accountName} (${a.balance.toFixed(2)})</option>
+            <option key={a.id} value={a.id}>{a.accountName} ({formatBalance(a.balance, a.currency)})</option>
           ))}
         </select>
         <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}

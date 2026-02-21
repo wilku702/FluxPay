@@ -6,6 +6,7 @@ import { getTransactions, type TransactionFilters } from '../api/transactions';
 import TransactionTable from '../components/TransactionTable';
 import TransactionFilterBar from '../components/TransactionFilters';
 import Pagination from '../components/Pagination';
+import { formatBalance } from '../utils/currency';
 
 const statusConfig: Record<string, { dot: string; badge: string }> = {
   ACTIVE: {
@@ -123,7 +124,7 @@ export default function AccountDetailPage() {
         <div className="mt-5">
           <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Available Balance</p>
           <p className="text-4xl font-bold text-text-primary tabular-nums tracking-tight">
-            ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatBalance(account.balance, account.currency)}
           </p>
         </div>
       </div>

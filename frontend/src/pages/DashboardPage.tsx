@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import AccountCard from '../components/AccountCard';
 import QuickTransfer from '../components/QuickTransfer';
 import CreateAccountModal from '../components/CreateAccountModal';
+import { formatBalance } from '../utils/currency';
 
 export default function DashboardPage() {
   const { fullName } = useAuth();
@@ -16,7 +17,11 @@ export default function DashboardPage() {
 
   const firstName = fullName?.split(' ')[0] || 'there';
 
-  const totalBalance = accounts?.reduce((sum, a) => sum + a.balance, 0) ?? 0;
+  const balanceByCurrency = accounts?.reduce<Record<string, number>>((acc, a) => {
+    acc[a.currency] = (acc[a.currency] ?? 0) + a.balance;
+    return acc;
+  }, {}) ?? {};
+  const currencyEntries = Object.entries(balanceByCurrency);
 
   if (isLoading) {
     return (
@@ -63,12 +68,17 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl font-semibold text-text-primary">Welcome back, {firstName}</h1>
-          {accounts && accounts.length > 0 && (
+          {accounts && accounts.length > 0 && currencyEntries.length > 0 && (
             <p className="text-text-secondary mt-1">
               Total balance:{' '}
-              <span className="text-text-primary font-semibold tabular-nums">
-                ${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
+              {currencyEntries.map(([currency, total], i) => (
+                <span key={currency}>
+                  {i > 0 && <span className="text-text-muted mx-1">/</span>}
+                  <span className="text-text-primary font-semibold tabular-nums">
+                    {formatBalance(total, currency)}
+                  </span>
+                </span>
+              ))}
             </p>
           )}
         </div>
@@ -100,10 +110,12 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <p className="text-sm font-medium text-text-primary">No accounts yet</p>
-              <p className="text-sm text-text-secondary mt-1">Create one to get started.</p>
+              <p className="text-sm text-text-secondary mt-1">
+                Accounts hold a balance in a single currency and record all transactions.
+              </p>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="mt-4 bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                className="mt-5 bg-accent hover:bg-accent-hover text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-colors"
               >
                 Create Account
               </button>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { AccountResponse } from '../types/api';
+import { formatBalance } from '../utils/currency';
 
 interface Props {
   account: AccountResponse;
@@ -41,11 +42,11 @@ export default function AccountCard({ account }: Props) {
         </span>
       </div>
       <p className="mt-5 text-3xl font-bold text-text-primary tabular-nums tracking-tight">
-        ${account.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        {formatBalance(account.balance, account.currency)}
       </p>
       <div className="mt-5 pt-4 border-t border-border-primary flex items-center justify-between">
         <span className="text-xs text-text-muted">View transactions</span>
-        <svg className="w-4 h-4 text-text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <svg className="w-4 h-4 text-text-muted group-hover:text-accent group-hover:translate-x-0.5 transition-all duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
         </svg>
       </div>
