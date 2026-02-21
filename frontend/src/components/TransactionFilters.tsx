@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'motion/react';
 
 interface Props {
   onFilter: (filters: {
@@ -40,8 +41,8 @@ export default function TransactionFilters({ onFilter }: Props) {
     onFilter({});
   };
 
-  const selectClass = "bg-surface-secondary border border-border-primary text-text-primary rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors";
-  const inputClass = "bg-surface-secondary border border-border-primary text-text-primary rounded-lg px-3 py-2 text-sm placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors";
+  const selectClass = "bg-surface-secondary border border-border-primary text-text-primary rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent focus-glow transition-colors";
+  const inputFieldClass = "bg-surface-secondary border border-border-primary text-text-primary rounded-lg px-3 py-2 text-sm placeholder:text-text-muted focus:outline-none focus:border-accent focus-glow transition-colors";
 
   return (
     <div className="bg-surface-elevated border border-border-primary rounded-xl p-4 mb-4">
@@ -59,23 +60,23 @@ export default function TransactionFilters({ onFilter }: Props) {
           <option value="REVERSED">Reversed</option>
         </select>
         <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
-          placeholder="From" className={inputClass} />
+          placeholder="From" className={inputFieldClass} />
         <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
-          placeholder="To" className={inputClass} />
+          placeholder="To" className={inputFieldClass} />
         <input type="number" value={minAmount} onChange={(e) => setMinAmount(e.target.value)}
-          placeholder="Min $" className={inputClass} step="0.01" />
+          placeholder="Min $" className={inputFieldClass} step="0.01" />
         <input type="number" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)}
-          placeholder="Max $" className={inputClass} step="0.01" />
+          placeholder="Max $" className={inputFieldClass} step="0.01" />
       </div>
       <div className="flex gap-2 mt-3">
-        <button onClick={handleApply}
+        <motion.button whileTap={{ scale: 0.97 }} onClick={handleApply}
           className="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
           Apply
-        </button>
-        <button onClick={handleReset}
+        </motion.button>
+        <motion.button whileTap={{ scale: 0.97 }} onClick={handleReset}
           className="bg-surface-hover text-text-secondary border border-border-primary px-4 py-2 rounded-lg text-sm font-medium hover:text-text-primary hover:border-border-secondary transition-colors">
           Reset
-        </button>
+        </motion.button>
       </div>
     </div>
   );

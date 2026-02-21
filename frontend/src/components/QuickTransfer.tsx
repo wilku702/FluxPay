@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion } from 'motion/react';
+import { toast } from 'sonner';
 import { transfer } from '../api/transactions';
 import type { AccountResponse } from '../types/api';
 import { formatBalance } from '../utils/currency';
+import { inputClass } from '../utils/styles';
+import Spinner from './ui/Spinner';
 
 interface Props {
   accounts: AccountResponse[];
@@ -13,8 +17,6 @@ export default function QuickTransfer({ accounts }: Props) {
   const [destId, setDestId] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
@@ -26,32 +28,27 @@ export default function QuickTransfer({ accounts }: Props) {
       crypto.randomUUID()
     ),
     onSuccess: () => {
-      setSuccess('Transfer completed!');
-      setError('');
+      toast.success('Transfer completed!');
       setAmount('');
       setDescription('');
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
     },
     onError: (err: unknown) => {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Transfer failed';
-      setError(msg);
-      setSuccess('');
+      toast.error(msg);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (sourceId === destId) {
-      setError('Source and destination must be different');
+      toast.error('Source and destination must be different');
       return;
     }
-    setError('');
-    setSuccess('');
     mutation.mutate();
   };
 
   const activeAccounts = accounts.filter(a => a.status === 'ACTIVE');
-  const inputClass = "w-full bg-surface-secondary border border-border-primary text-text-primary rounded-lg px-4 py-2.5 text-sm placeholder:text-text-muted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors";
 
   return (
     <div className="bg-surface-elevated border border-border-primary rounded-xl p-6">
@@ -77,17 +74,12 @@ export default function QuickTransfer({ accounts }: Props) {
         <input type="text" value={description} onChange={(e) => setDescription(e.target.value)}
           placeholder="Description (optional)"
           className={inputClass} />
-        <button type="submit" disabled={mutation.isPending}
-          className="w-full bg-accent hover:bg-accent-hover text-white py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+        <motion.button whileTap={{ scale: 0.97 }} type="submit" disabled={mutation.isPending}
+          className="w-full bg-accent hover:bg-accent-hover text-white py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          {mutation.isPending && <Spinner />}
           {mutation.isPending ? 'Processing...' : 'Transfer'}
-        </button>
+        </motion.button>
       </form>
-      {error && (
-        <div className="mt-3 bg-danger-muted text-danger rounded-lg p-3 text-sm">{error}</div>
-      )}
-      {success && (
-        <div className="mt-3 bg-accent-muted text-accent rounded-lg p-3 text-sm">{success}</div>
-      )}
     </div>
   );
 }
