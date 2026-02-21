@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -85,6 +86,20 @@ public class TransactionService {
         String statusStr = status != null ? status.name() : null;
         return transactionRepository.findByFilters(accountId, typeStr, statusStr, from, to, minAmount, maxAmount, pageable)
                 .map(TransactionResponse::from);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Transaction> exportTransactions(Long accountId,
+                                                 com.payflow.model.TransactionType type,
+                                                 com.payflow.model.TransactionStatus status,
+                                                 LocalDateTime from,
+                                                 LocalDateTime to,
+                                                 Long userId) {
+        verifyAccountOwnership(accountId, userId);
+        String typeStr = type != null ? type.name() : null;
+        String statusStr = status != null ? status.name() : null;
+        return transactionRepository.findByFilters(accountId, typeStr, statusStr, from, to, null, null,
+                Pageable.unpaged(Sort.by(Sort.Direction.DESC, "created_at"))).getContent();
     }
 
     @Transactional(readOnly = true)

@@ -15,8 +15,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -86,6 +89,37 @@ public class TransactionController {
         return ResponseEntity.ok(transactionService.getTransactions(
                 accountId, type, status, from, to, minAmount, maxAmount,
                 PageRequest.of(page, size, sort), userId));
+    }
+
+    @GetMapping("/export")
+    public void exportCsv(
+            @RequestParam Long accountId,
+            @RequestParam(required = false) TransactionType type,
+            @RequestParam(required = false) TransactionStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+            Authentication authentication,
+            jakarta.servlet.http.HttpServletResponse response) throws java.io.IOException {
+        Long userId = Long.parseLong(authentication.getName());
+        List<com.payflow.model.Transaction> transactions = transactionService.exportTransactions(
+                accountId, type, status, from, to, userId);
+
+        response.setContentType("text/csv");
+        response.setHeader("Content-Disposition", "attachment; filename=transactions.csv");
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        PrintWriter writer = response.getWriter();
+        writer.println("Date,Type,Amount,Description,Status,Balance After");
+        for (com.payflow.model.Transaction tx : transactions) {
+            writer.printf("%s,%s,%s,\"%s\",%s,%s%n",
+                    tx.getCreatedAt() != null ? tx.getCreatedAt().format(fmt) : "",
+                    tx.getType(),
+                    tx.getAmount().toPlainString(),
+                    tx.getDescription() != null ? tx.getDescription().replace("\"", "\"\"") : "",
+                    tx.getStatus(),
+                    tx.getBalanceAfter().toPlainString());
+        }
+        writer.flush();
     }
 
     @GetMapping("/{id}")
