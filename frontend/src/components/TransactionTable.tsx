@@ -1,3 +1,4 @@
+import { motion } from 'motion/react';
 import type { TransactionResponse } from '../types/api';
 import { txStatusConfig } from '../utils/statusConfig';
 import { formatBalance } from '../utils/currency';
@@ -57,8 +58,14 @@ export default function TransactionTable({ transactions, currency = 'USD', onSor
             </tr>
           </thead>
           <tbody>
-            {transactions.map((tx) => (
-              <tr key={tx.id} className="border-b border-border-primary last:border-0 hover:bg-surface-hover transition-colors duration-100">
+            {transactions.map((tx, index) => (
+              <motion.tr
+                key={tx.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: index * 0.03 }}
+                className="border-b border-border-primary last:border-0 hover:bg-surface-hover transition-colors duration-100"
+              >
                 <td className="px-4 py-3.5 text-sm text-text-secondary tabular-nums whitespace-nowrap">
                   {new Date(tx.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   <span className="block text-xs text-text-muted">
@@ -93,7 +100,7 @@ export default function TransactionTable({ transactions, currency = 'USD', onSor
                 <td className="px-4 py-3.5 text-sm font-medium text-text-primary tabular-nums text-right">
                   {formatBalance(tx.balanceAfter, currency)}
                 </td>
-              </tr>
+              </motion.tr>
             ))}
             {transactions.length === 0 && (
               <tr>
