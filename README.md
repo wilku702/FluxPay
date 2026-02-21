@@ -16,7 +16,11 @@ React SPA (port 3000) → Spring Boot REST API (port 8080) → PostgreSQL (port 
 
 ## Quick Start
 
-### Docker Compose (recommended)
+Choose **one** of the two approaches below — do not run both at the same time or you'll get port conflicts.
+
+### Option 1: Docker Compose (recommended)
+
+Starts all three services (database, backend, frontend) in containers:
 
 ```bash
 docker compose up
@@ -24,10 +28,12 @@ docker compose up
 
 Services: `http://localhost:3000` (frontend), `http://localhost:8080` (API), `localhost:5432` (database)
 
-### Local Development
+### Option 2: Local Development
+
+Run the backend and frontend outside Docker while using a containerized database:
 
 ```bash
-# Start database
+# Start database only
 docker compose up db
 
 # Start backend (requires Java 17)
