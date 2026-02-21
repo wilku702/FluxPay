@@ -38,6 +38,26 @@ export interface TransactionFilters {
   sortDir?: string;
 }
 
+export async function exportTransactions(filters: Partial<TransactionFilters>): Promise<void> {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') {
+      params.append(key, String(value));
+    }
+  });
+  const res = await client.get(`/transactions/export?${params.toString()}`, {
+    responseType: 'blob',
+  });
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'transactions.csv');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export async function getTransactions(filters: TransactionFilters): Promise<Page<TransactionResponse>> {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
