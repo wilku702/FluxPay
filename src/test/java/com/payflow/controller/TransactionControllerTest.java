@@ -234,7 +234,7 @@ class TransactionControllerTest {
 
         verify(transactionService).getTransactions(
                 eq(1L), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
-                argThat(pageable -> pageable.getSort().getOrderFor("createdAt") != null),
+                argThat(pageable -> pageable.getSort().getOrderFor("created_at") != null),
                 eq(USER_ID));
     }
 

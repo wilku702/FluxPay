@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -25,6 +26,12 @@ import java.util.Set;
 public class TransactionController {
 
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of("createdAt", "amount", "type", "status");
+    private static final Map<String, String> SORT_FIELD_TO_COLUMN = Map.of(
+            "createdAt", "created_at",
+            "amount", "amount",
+            "type", "type",
+            "status", "status"
+    );
     private static final int MAX_PAGE_SIZE = 100;
 
     private final TransactionService transactionService;
@@ -69,12 +76,13 @@ public class TransactionController {
         // Clamp page size
         size = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
 
-        // Validate sort field
+        // Validate and map sort field to SQL column name
         if (!ALLOWED_SORT_FIELDS.contains(sortBy)) {
             sortBy = "createdAt";
         }
+        String column = SORT_FIELD_TO_COLUMN.getOrDefault(sortBy, "created_at");
 
-        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
+        Sort sort = sortDir.equalsIgnoreCase("asc") ? Sort.by(column).ascending() : Sort.by(column).descending();
         return ResponseEntity.ok(transactionService.getTransactions(
                 accountId, type, status, from, to, minAmount, maxAmount,
                 PageRequest.of(page, size, sort), userId));

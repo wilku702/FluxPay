@@ -81,7 +81,9 @@ public class TransactionService {
                                                      Pageable pageable,
                                                      Long userId) {
         verifyAccountOwnership(accountId, userId);
-        return transactionRepository.findByFilters(accountId, type, status, from, to, minAmount, maxAmount, pageable)
+        String typeStr = type != null ? type.name() : null;
+        String statusStr = status != null ? status.name() : null;
+        return transactionRepository.findByFilters(accountId, typeStr, statusStr, from, to, minAmount, maxAmount, pageable)
                 .map(TransactionResponse::from);
     }
 

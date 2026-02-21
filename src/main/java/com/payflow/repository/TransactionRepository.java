@@ -19,17 +19,25 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByCorrelationId(UUID correlationId);
 
-    @Query("SELECT t FROM Transaction t WHERE t.accountId = :accountId " +
-           "AND (:type IS NULL OR t.type = :type) " +
-           "AND (:status IS NULL OR t.status = :status) " +
-           "AND (:from IS NULL OR t.createdAt >= :from) " +
-           "AND (:to IS NULL OR t.createdAt <= :to) " +
-           "AND (:minAmount IS NULL OR t.amount >= :minAmount) " +
-           "AND (:maxAmount IS NULL OR t.amount <= :maxAmount)")
+    @Query(value = "SELECT * FROM transactions t WHERE t.account_id = :accountId " +
+           "AND (CAST(:type AS VARCHAR) IS NULL OR t.type = :type) " +
+           "AND (CAST(:status AS VARCHAR) IS NULL OR t.status = :status) " +
+           "AND (CAST(:from AS TIMESTAMP) IS NULL OR t.created_at >= :from) " +
+           "AND (CAST(:to AS TIMESTAMP) IS NULL OR t.created_at <= :to) " +
+           "AND (CAST(:minAmount AS DECIMAL) IS NULL OR t.amount >= :minAmount) " +
+           "AND (CAST(:maxAmount AS DECIMAL) IS NULL OR t.amount <= :maxAmount)",
+           countQuery = "SELECT COUNT(*) FROM transactions t WHERE t.account_id = :accountId " +
+           "AND (CAST(:type AS VARCHAR) IS NULL OR t.type = :type) " +
+           "AND (CAST(:status AS VARCHAR) IS NULL OR t.status = :status) " +
+           "AND (CAST(:from AS TIMESTAMP) IS NULL OR t.created_at >= :from) " +
+           "AND (CAST(:to AS TIMESTAMP) IS NULL OR t.created_at <= :to) " +
+           "AND (CAST(:minAmount AS DECIMAL) IS NULL OR t.amount >= :minAmount) " +
+           "AND (CAST(:maxAmount AS DECIMAL) IS NULL OR t.amount <= :maxAmount)",
+           nativeQuery = true)
     Page<Transaction> findByFilters(
             @Param("accountId") Long accountId,
-            @Param("type") com.payflow.model.TransactionType type,
-            @Param("status") com.payflow.model.TransactionStatus status,
+            @Param("type") String type,
+            @Param("status") String status,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to,
             @Param("minAmount") BigDecimal minAmount,
