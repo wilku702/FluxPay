@@ -7,21 +7,9 @@ import TransactionTable from '../components/TransactionTable';
 import TransactionFilterBar from '../components/TransactionFilters';
 import Pagination from '../components/Pagination';
 import { formatBalance } from '../utils/currency';
-
-const statusConfig: Record<string, { dot: string; badge: string }> = {
-  ACTIVE: {
-    dot: 'bg-success',
-    badge: 'bg-success/15 text-success',
-  },
-  FROZEN: {
-    dot: 'bg-warning',
-    badge: 'bg-warning/15 text-warning',
-  },
-  CLOSED: {
-    dot: 'bg-text-muted',
-    badge: 'bg-surface-hover text-text-muted',
-  },
-};
+import { accountStatusConfig } from '../utils/statusConfig';
+import AccountStatusModal from '../components/AccountStatusModal';
+import { exportTransactions } from '../api/transactions';
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +19,7 @@ export default function AccountDetailPage() {
   const [page, setPage] = useState(0);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortDir, setSortDir] = useState('desc');
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   const { data: account, isLoading: accountLoading } = useQuery({
     queryKey: ['account', accountId],
@@ -105,7 +94,7 @@ export default function AccountDetailPage() {
     );
   }
 
-  const status = statusConfig[account.status] || statusConfig.CLOSED;
+  const status = accountStatusConfig[account.status] || accountStatusConfig.CLOSED;
 
   return (
     <div>
@@ -116,10 +105,18 @@ export default function AccountDetailPage() {
             <h1 className="text-2xl font-semibold text-text-primary">{account.accountName}</h1>
             <p className="text-sm text-text-muted mt-1">{account.currency}</p>
           </div>
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.badge}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-            {account.status}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${status.badge}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
+              {account.status}
+            </span>
+            <button
+              onClick={() => setShowStatusModal(true)}
+              className="px-2.5 py-1 rounded-full text-xs font-medium border border-border-primary text-text-secondary hover:bg-surface-hover transition-colors"
+            >
+              Manage
+            </button>
+          </div>
         </div>
         <div className="mt-5">
           <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Available Balance</p>
@@ -129,7 +126,18 @@ export default function AccountDetailPage() {
         </div>
       </div>
 
-      <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">Transaction History</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider">Transaction History</h2>
+        <button
+          onClick={() => exportTransactions({ accountId, ...filters })}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border-primary text-text-secondary hover:bg-surface-hover transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          Export CSV
+        </button>
+      </div>
       <TransactionFilterBar onFilter={handleFilter} />
 
       {txLoading ? (
@@ -149,6 +157,7 @@ export default function AccountDetailPage() {
         <>
           <TransactionTable
             transactions={txPage?.content || []}
+            currency={account.currency}
             onSort={handleSort}
             sortBy={sortBy}
             sortDir={sortDir}
@@ -161,6 +170,10 @@ export default function AccountDetailPage() {
             />
           )}
         </>
+      )}
+
+      {showStatusModal && account && (
+        <AccountStatusModal account={account} onClose={() => setShowStatusModal(false)} />
       )}
     </div>
   );

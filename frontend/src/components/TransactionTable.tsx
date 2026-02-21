@@ -1,20 +1,16 @@
 import type { TransactionResponse } from '../types/api';
+import { txStatusConfig } from '../utils/statusConfig';
+import { formatBalance } from '../utils/currency';
 
 interface Props {
   transactions: TransactionResponse[];
+  currency?: string;
   onSort?: (field: string) => void;
   sortBy?: string;
   sortDir?: string;
 }
 
-const statusConfig: Record<string, string> = {
-  COMPLETED: 'bg-success/15 text-success',
-  PENDING: 'bg-warning/15 text-warning',
-  FAILED: 'bg-danger/15 text-danger',
-  REVERSED: 'bg-surface-hover text-text-muted',
-};
-
-export default function TransactionTable({ transactions, onSort, sortBy = 'createdAt', sortDir = 'desc' }: Props) {
+export default function TransactionTable({ transactions, currency = 'USD', onSort, sortBy = 'createdAt', sortDir = 'desc' }: Props) {
   const renderSortIcon = (field: string) => {
     if (sortBy !== field) return null;
     return (
@@ -78,14 +74,14 @@ export default function TransactionTable({ transactions, onSort, sortBy = 'creat
                 </td>
                 <td className="px-4 py-3.5 text-sm font-semibold tabular-nums">
                   <span className={tx.type === 'CREDIT' ? 'text-success' : 'text-danger'}>
-                    {tx.type === 'CREDIT' ? '+' : '-'}${tx.amount.toFixed(2)}
+                    {tx.type === 'CREDIT' ? '+' : '-'}{formatBalance(tx.amount, currency)}
                   </span>
                 </td>
                 <td className="px-4 py-3.5 text-sm text-text-secondary max-w-[200px] truncate">
                   {tx.description}
                 </td>
                 <td className="px-4 py-3.5 text-sm">
-                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${statusConfig[tx.status] || statusConfig.COMPLETED}`}>
+                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${txStatusConfig[tx.status] || txStatusConfig.COMPLETED}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${
                       tx.status === 'COMPLETED' ? 'bg-success' :
                       tx.status === 'PENDING' ? 'bg-warning animate-pulse' :
@@ -95,7 +91,7 @@ export default function TransactionTable({ transactions, onSort, sortBy = 'creat
                   </span>
                 </td>
                 <td className="px-4 py-3.5 text-sm font-medium text-text-primary tabular-nums text-right">
-                  ${tx.balanceAfter.toFixed(2)}
+                  {formatBalance(tx.balanceAfter, currency)}
                 </td>
               </tr>
             ))}
