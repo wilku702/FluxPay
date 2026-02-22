@@ -13,6 +13,7 @@ import { exportTransactions } from '../api/transactions';
 import AnimatedPage from '../components/animation/AnimatedPage';
 import AnimatedNumber from '../components/animation/AnimatedNumber';
 import Skeleton from '../components/animation/SkeletonShimmer';
+import BalanceChart from '../components/BalanceChart';
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -130,6 +131,11 @@ export default function AccountDetailPage() {
             />
           </p>
         </div>
+      </div>
+
+      {/* Balance Chart */}
+      <div className="mb-6">
+        <BalanceChart accountId={accountId} currency={account.currency} days={30} />
       </div>
 
       <div className="flex items-center justify-between mb-4">

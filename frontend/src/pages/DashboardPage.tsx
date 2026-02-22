@@ -10,6 +10,7 @@ import AnimatedPage from '../components/animation/AnimatedPage';
 import StaggeredList from '../components/animation/StaggeredList';
 import AnimatedNumber from '../components/animation/AnimatedNumber';
 import Skeleton from '../components/animation/SkeletonShimmer';
+import BalanceChart from '../components/BalanceChart';
 import { formatBalance } from '../utils/currency';
 
 export default function DashboardPage() {
@@ -139,6 +140,17 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      {/* Balance Chart */}
+      {accounts && accounts.length > 0 && (
+        <div className="mt-6">
+          <h2 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">Balance Overview</h2>
+          <BalanceChart
+            accountId={accounts[0].id}
+            currency={accounts[0].currency}
+            days={30}
+          />
+        </div>
+      )}
       {showCreateModal && <CreateAccountModal onClose={() => setShowCreateModal(false)} />}
     </AnimatedPage>
   );

@@ -55,3 +55,13 @@ export interface ErrorResponse {
   message: string;
   fieldErrors?: Record<string, string>;
 }
+
+export interface DailySummary {
+  id: number;
+  accountId: number;
+  summaryDate: string;
+  totalCredits: number;
+  totalDebits: number;
+  transactionCount: number;
+  closingBalance: number | null;
+}
