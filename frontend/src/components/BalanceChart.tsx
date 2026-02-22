@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   AreaChart,
@@ -21,8 +22,13 @@ interface BalanceChartProps {
 }
 
 export default function BalanceChart({ accountId, currency, days = 30 }: BalanceChartProps) {
-  const to = new Date().toISOString().split('T')[0];
-  const from = new Date(Date.now() - days * 86400000).toISOString().split('T')[0];
+  const { from, to } = useMemo(() => {
+    const now = new Date();
+    return {
+      to: now.toISOString().split('T')[0],
+      from: new Date(now.getTime() - days * 86400000).toISOString().split('T')[0],
+    };
+  }, [days]);
 
   const { data: summaries, isLoading } = useQuery({
     queryKey: ['summaries', accountId, from, to],
