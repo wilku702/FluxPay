@@ -9,7 +9,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
@@ -20,6 +22,13 @@ import static org.assertj.core.api.Assertions.*;
 @SpringBootTest
 @ActiveProfiles("test")
 @Testcontainers
+@TestPropertySource(properties = {
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration",
+        "spring.datasource.url=jdbc:tc:postgresql:16:///testdb",
+        "spring.datasource.driver-class-name=org.testcontainers.jdbc.ContainerDatabaseDriver",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.flyway.enabled=false"
+})
 class TransactionIntegrationTest {
 
     @Autowired
@@ -28,6 +37,13 @@ class TransactionIntegrationTest {
     private AccountRepository accountRepository;
     @Autowired
     private UserRepository userRepository;
+
+    @MockBean
+    private BalanceCacheService balanceCacheService;
+    @MockBean
+    private RateLimitService rateLimitService;
+    @MockBean
+    private com.payflow.event.TransactionEventPublisher transactionEventPublisher;
 
     private Account sourceAccount;
     private Account destAccount;
