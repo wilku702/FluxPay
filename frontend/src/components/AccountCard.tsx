@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import type { AccountResponse } from '../types/api';
 import { formatBalance } from '../utils/currency';
 import AnimatedNumber from './animation/AnimatedNumber';
-import { staggerItem } from './animation/StaggeredList';
+import { staggerItem } from './animation/staggerVariants';
 
 interface Props {
   account: AccountResponse;

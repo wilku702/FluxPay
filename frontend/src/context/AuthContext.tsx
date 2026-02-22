@@ -1,26 +1,13 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { useState, useCallback, type ReactNode } from 'react';
 import { setTokens, clearTokens } from '../api/client';
 import type { AuthResponse } from '../types/api';
-
-interface AuthState {
-  userId: number | null;
-  email: string | null;
-  fullName: string | null;
-  isAuthenticated: boolean;
-}
-
-interface AuthContextType extends AuthState {
-  handleAuth: (data: AuthResponse) => void;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
+import { AuthContext } from './authContextValue';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [auth, setAuth] = useState<AuthState>({
-    userId: null,
-    email: null,
-    fullName: null,
+  const [auth, setAuth] = useState({
+    userId: null as number | null,
+    email: null as string | null,
+    fullName: null as string | null,
     isAuthenticated: false,
   });
 
@@ -44,10 +31,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
 }

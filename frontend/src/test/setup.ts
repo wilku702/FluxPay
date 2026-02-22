@@ -3,14 +3,14 @@ import { vi } from 'vitest';
 import React from 'react';
 
 // Helper to strip motion-specific props
+const MOTION_PROPS = new Set([
+  'initial', 'animate', 'exit', 'transition', 'variants',
+  'whileHover', 'whileTap', 'whileFocus', 'whileDrag', 'whileInView',
+  'layout', 'layoutId', 'onAnimationStart', 'onAnimationComplete', 'custom',
+]);
+
 function stripMotionProps(props: Record<string, unknown>) {
-  const {
-    initial, animate, exit, transition, variants,
-    whileHover, whileTap, whileFocus, whileDrag, whileInView,
-    layout, layoutId, onAnimationStart, onAnimationComplete,
-    custom, ...rest
-  } = props;
-  return rest;
+  return Object.fromEntries(Object.entries(props).filter(([k]) => !MOTION_PROPS.has(k)));
 }
 
 // Mock motion/react so animated components render immediately as plain elements

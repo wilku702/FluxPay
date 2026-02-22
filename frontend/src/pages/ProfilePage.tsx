@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { getMe } from '../api/auth';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import AnimatedPage from '../components/animation/AnimatedPage';
 import FadeIn from '../components/animation/FadeIn';
 import Skeleton from '../components/animation/SkeletonShimmer';

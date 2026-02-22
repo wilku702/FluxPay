@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'motion/react';
 import { getAccounts } from '../api/accounts';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import AccountCard from '../components/AccountCard';
 import QuickTransfer from '../components/QuickTransfer';
 import CreateAccountModal from '../components/CreateAccountModal';

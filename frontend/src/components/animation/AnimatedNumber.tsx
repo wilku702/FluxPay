@@ -16,10 +16,7 @@ export default function AnimatedNumber({ value, duration = 0.8, formatFn, classN
     const from = prevValue.current;
     prevValue.current = value;
 
-    if (from === value) {
-      setDisplay(value);
-      return;
-    }
+    if (from === value) return;
 
     const controls = animate(from, value, {
       duration,
