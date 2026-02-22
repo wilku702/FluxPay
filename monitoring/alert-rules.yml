@@ -1,0 +1,29 @@
+groups:
+  - name: fluxpay-alerts
+    rules:
+      - alert: HighTransactionFailureRate
+        expr: rate(fluxpay_transactions_failure_total[5m]) / (rate(fluxpay_transactions_success_total[5m]) + rate(fluxpay_transactions_failure_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High transaction failure rate"
+          description: "More than 5% of transactions are failing over the last 5 minutes."
+
+      - alert: HighTransactionLatency
+        expr: histogram_quantile(0.95, rate(fluxpay_transactions_duration_seconds_bucket[3m])) > 2
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High transaction latency"
+          description: "p95 transaction latency exceeds 2 seconds over the last 3 minutes."
+
+      - alert: HighRateLimiting
+        expr: rate(fluxpay_ratelimit_rejected_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High rate of rate-limited requests"
+          description: "More than 10 requests per second are being rate-limited."
