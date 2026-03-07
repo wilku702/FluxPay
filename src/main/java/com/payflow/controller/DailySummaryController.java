@@ -1,8 +1,7 @@
 package com.payflow.controller;
 
 import com.payflow.model.DailySummary;
-import com.payflow.repository.DailySummaryRepository;
-import com.payflow.service.AccountService;
+import com.payflow.service.DailySummaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -17,8 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DailySummaryController {
 
-    private final DailySummaryRepository dailySummaryRepository;
-    private final AccountService accountService;
+    private final DailySummaryService dailySummaryService;
 
     @GetMapping
     public ResponseEntity<List<DailySummary>> getSummaries(
@@ -27,11 +25,6 @@ public class DailySummaryController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             Authentication authentication) {
         Long userId = Long.parseLong(authentication.getName());
-        // Verify ownership
-        accountService.getById(accountId, userId);
-
-        List<DailySummary> summaries = dailySummaryRepository
-                .findByAccountIdAndSummaryDateBetweenOrderBySummaryDateAsc(accountId, from, to);
-        return ResponseEntity.ok(summaries);
+        return ResponseEntity.ok(dailySummaryService.getSummaries(accountId, from, to, userId));
     }
 }

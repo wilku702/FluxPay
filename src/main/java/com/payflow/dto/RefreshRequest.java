@@ -1,17 +1,7 @@
 package com.payflow.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class RefreshRequest {
-
-    @NotBlank(message = "Refresh token is required")
-    private String refreshToken;
-}
+public record RefreshRequest(
+        @NotBlank(message = "Refresh token is required") String refreshToken
+) {}

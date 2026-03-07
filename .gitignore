@@ -39,3 +39,8 @@ jacoco.exec
 
 CLAUDE.md
 /.claude
+
+TUTORIAL.md
+.gitignore
+
+.demo/*

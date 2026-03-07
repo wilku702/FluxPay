@@ -48,8 +48,8 @@ class AccountServiceTest {
 
         AccountResponse response = accountService.create(1L, new CreateAccountRequest("Checking", "USD"));
 
-        assertThat(response.getAccountName()).isEqualTo("Checking");
-        assertThat(response.getCurrency()).isEqualTo("USD");
+        assertThat(response.accountName()).isEqualTo("Checking");
+        assertThat(response.currency()).isEqualTo("USD");
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -59,8 +59,8 @@ class AccountServiceTest {
 
         AccountResponse response = accountService.getById(1L, 1L);
 
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getBalance()).isEqualByComparingTo(BigDecimal.valueOf(1000));
+        assertThat(response.id()).isEqualTo(1L);
+        assertThat(response.balance()).isEqualByComparingTo(BigDecimal.valueOf(1000));
     }
 
     @Test
@@ -86,7 +86,7 @@ class AccountServiceTest {
         List<AccountResponse> result = accountService.getByUserId(1L);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getAccountName()).isEqualTo("Checking");
+        assertThat(result.get(0).accountName()).isEqualTo("Checking");
     }
 
     @Test

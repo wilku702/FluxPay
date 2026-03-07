@@ -33,42 +33,42 @@ public class TransactionService {
     private final MetricsService metricsService;
 
     public TransactionResponse deposit(DepositRequest request, Long userId) {
-        verifyAccountOwnership(request.getAccountId(), userId);
+        verifyAccountOwnership(request.accountId(), userId);
         return executeWithRetry(() ->
                 transferExecutor.executeDeposit(
-                        request.getAccountId(),
-                        request.getAmount(),
-                        request.getDescription(),
-                        request.getIdempotencyKey()
+                        request.accountId(),
+                        request.amount(),
+                        request.description(),
+                        request.idempotencyKey()
                 ));
     }
 
     public TransactionResponse withdraw(WithdrawRequest request, Long userId) {
-        verifyAccountOwnership(request.getAccountId(), userId);
+        verifyAccountOwnership(request.accountId(), userId);
         return executeWithRetry(() ->
                 transferExecutor.executeWithdraw(
-                        request.getAccountId(),
-                        request.getAmount(),
-                        request.getDescription(),
-                        request.getIdempotencyKey()
+                        request.accountId(),
+                        request.amount(),
+                        request.description(),
+                        request.idempotencyKey()
                 ));
     }
 
     public TransferResponse transfer(TransferRequest request, Long userId) {
-        if (request.getSourceAccountId().equals(request.getDestinationAccountId())) {
+        if (request.sourceAccountId().equals(request.destinationAccountId())) {
             throw new IllegalArgumentException("Source and destination accounts must be different");
         }
 
-        verifyAccountOwnership(request.getSourceAccountId(), userId);
-        verifyAccountOwnership(request.getDestinationAccountId(), userId);
+        verifyAccountOwnership(request.sourceAccountId(), userId);
+        verifyAccountOwnership(request.destinationAccountId(), userId);
 
         return executeWithRetry(() ->
                 transferExecutor.executeTransfer(
-                        request.getSourceAccountId(),
-                        request.getDestinationAccountId(),
-                        request.getAmount(),
-                        request.getDescription(),
-                        request.getIdempotencyKey()
+                        request.sourceAccountId(),
+                        request.destinationAccountId(),
+                        request.amount(),
+                        request.description(),
+                        request.idempotencyKey()
                 ));
     }
 

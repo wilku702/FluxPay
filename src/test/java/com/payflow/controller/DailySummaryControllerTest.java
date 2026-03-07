@@ -1,11 +1,8 @@
 package com.payflow.controller;
 
-import com.payflow.dto.AccountResponse;
 import com.payflow.exception.AccountNotFoundException;
-import com.payflow.model.AccountStatus;
 import com.payflow.model.DailySummary;
-import com.payflow.repository.DailySummaryRepository;
-import com.payflow.service.AccountService;
+import com.payflow.service.DailySummaryService;
 import com.payflow.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +13,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -35,10 +31,7 @@ class DailySummaryControllerTest {
     private MockMvc mockMvc;
 
     @MockBean
-    private DailySummaryRepository dailySummaryRepository;
-
-    @MockBean
-    private AccountService accountService;
+    private DailySummaryService dailySummaryService;
 
     @MockBean
     private JwtUtil jwtUtil;
@@ -59,11 +52,6 @@ class DailySummaryControllerTest {
 
     @Test
     void getSummariesReturns200() throws Exception {
-        AccountResponse stubAccount = new AccountResponse(
-                1L, USER_ID, "Checking", BigDecimal.valueOf(1000), "USD",
-                AccountStatus.ACTIVE, LocalDateTime.now());
-        when(accountService.getById(1L, USER_ID)).thenReturn(stubAccount);
-
         DailySummary summary = new DailySummary(1L, LocalDate.of(2024, 6, 15));
         summary.setId(1L);
         summary.setTotalCredits(BigDecimal.valueOf(500));
@@ -71,8 +59,7 @@ class DailySummaryControllerTest {
         summary.setTransactionCount(3);
         summary.setClosingBalance(BigDecimal.valueOf(1400));
 
-        when(dailySummaryRepository.findByAccountIdAndSummaryDateBetweenOrderBySummaryDateAsc(
-                eq(1L), any(LocalDate.class), any(LocalDate.class)))
+        when(dailySummaryService.getSummaries(eq(1L), any(LocalDate.class), any(LocalDate.class), eq(USER_ID)))
                 .thenReturn(List.of(summary));
 
         mockMvc.perform(get("/api/accounts/1/summaries")
@@ -88,7 +75,8 @@ class DailySummaryControllerTest {
 
     @Test
     void getSummariesReturns404WhenAccountNotOwned() throws Exception {
-        when(accountService.getById(99L, USER_ID)).thenThrow(new AccountNotFoundException(99L));
+        when(dailySummaryService.getSummaries(eq(99L), any(LocalDate.class), any(LocalDate.class), eq(USER_ID)))
+                .thenThrow(new AccountNotFoundException(99L));
 
         mockMvc.perform(get("/api/accounts/99/summaries")
                         .with(user("1"))

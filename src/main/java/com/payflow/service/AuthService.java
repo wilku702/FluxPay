@@ -21,14 +21,14 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new EmailAlreadyExistsException(request.getEmail());
+        if (userRepository.existsByEmail(request.email())) {
+            throw new EmailAlreadyExistsException(request.email());
         }
 
         User user = new User(
-                request.getEmail(),
-                passwordEncoder.encode(request.getPassword()),
-                request.getFullName()
+                request.email(),
+                passwordEncoder.encode(request.password()),
+                request.fullName()
         );
         user = userRepository.save(user);
 
@@ -37,10 +37,10 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(request.email())
                 .orElseThrow(InvalidCredentialsException::new);
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new InvalidCredentialsException();
         }
 
@@ -48,7 +48,7 @@ public class AuthService {
     }
 
     public AuthResponse refresh(RefreshRequest request) {
-        String token = request.getRefreshToken();
+        String token = request.refreshToken();
         if (!jwtUtil.isValid(token) || !"refresh".equals(jwtUtil.getTokenType(token))) {
             throw new InvalidCredentialsException();
         }

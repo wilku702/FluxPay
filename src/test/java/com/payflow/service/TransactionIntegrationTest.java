@@ -72,9 +72,9 @@ class TransactionIntegrationTest {
 
         TransferResponse response = transactionService.transfer(request, userId);
 
-        assertThat(response.getCorrelationId()).isNotNull();
-        assertThat(response.getDebit().getBalanceAfter()).isEqualByComparingTo(BigDecimal.valueOf(800));
-        assertThat(response.getCredit().getBalanceAfter()).isEqualByComparingTo(BigDecimal.valueOf(700));
+        assertThat(response.correlationId()).isNotNull();
+        assertThat(response.debit().balanceAfter()).isEqualByComparingTo(BigDecimal.valueOf(800));
+        assertThat(response.credit().balanceAfter()).isEqualByComparingTo(BigDecimal.valueOf(700));
 
         // Verify account balances
         Account updatedSource = accountRepository.findById(sourceAccount.getId()).orElseThrow();
@@ -89,13 +89,13 @@ class TransactionIntegrationTest {
         TransactionResponse deposit = transactionService.deposit(
                 new DepositRequest(sourceAccount.getId(), BigDecimal.valueOf(300), "Deposit", depositKey), userId);
 
-        assertThat(deposit.getBalanceAfter()).isEqualByComparingTo(BigDecimal.valueOf(1300));
+        assertThat(deposit.balanceAfter()).isEqualByComparingTo(BigDecimal.valueOf(1300));
 
         String withdrawKey = UUID.randomUUID().toString();
         TransactionResponse withdraw = transactionService.withdraw(
                 new WithdrawRequest(sourceAccount.getId(), BigDecimal.valueOf(100), "Withdraw", withdrawKey), userId);
 
-        assertThat(withdraw.getBalanceAfter()).isEqualByComparingTo(BigDecimal.valueOf(1200));
+        assertThat(withdraw.balanceAfter()).isEqualByComparingTo(BigDecimal.valueOf(1200));
     }
 
     @Test
@@ -108,7 +108,7 @@ class TransactionIntegrationTest {
         TransferResponse first = transactionService.transfer(request, userId);
         TransferResponse second = transactionService.transfer(request, userId);
 
-        assertThat(first.getCorrelationId()).isEqualTo(second.getCorrelationId());
+        assertThat(first.correlationId()).isEqualTo(second.correlationId());
 
         // Balance only changed once
         Account updatedSource = accountRepository.findById(sourceAccount.getId()).orElseThrow();

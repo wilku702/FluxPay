@@ -90,9 +90,9 @@ class TransactionServiceTest {
 
         TransferResponse result = transactionService.transfer(transferRequest, USER_ID);
 
-        assertThat(result.getDebit().getType()).isEqualTo(TransactionType.DEBIT);
-        assertThat(result.getCredit().getType()).isEqualTo(TransactionType.CREDIT);
-        assertThat(result.getDebit().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(100));
+        assertThat(result.debit().type()).isEqualTo(TransactionType.DEBIT);
+        assertThat(result.credit().type()).isEqualTo(TransactionType.CREDIT);
+        assertThat(result.debit().amount()).isEqualByComparingTo(BigDecimal.valueOf(100));
     }
 
     @Test
@@ -181,8 +181,8 @@ class TransactionServiceTest {
 
         TransactionResponse result = transactionService.deposit(depositRequest, USER_ID);
 
-        assertThat(result.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(500));
-        assertThat(result.getType()).isEqualTo(TransactionType.CREDIT);
+        assertThat(result.amount()).isEqualByComparingTo(BigDecimal.valueOf(500));
+        assertThat(result.type()).isEqualTo(TransactionType.CREDIT);
     }
 
     @Test
@@ -205,8 +205,8 @@ class TransactionServiceTest {
 
         TransactionResponse result = transactionService.withdraw(withdrawRequest, USER_ID);
 
-        assertThat(result.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(50));
-        assertThat(result.getType()).isEqualTo(TransactionType.DEBIT);
+        assertThat(result.amount()).isEqualByComparingTo(BigDecimal.valueOf(50));
+        assertThat(result.type()).isEqualTo(TransactionType.DEBIT);
     }
 
     @Test
@@ -235,7 +235,7 @@ class TransactionServiceTest {
 
         TransactionResponse result = transactionService.getById(1L, USER_ID);
 
-        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.id()).isEqualTo(1L);
     }
 
     @Test

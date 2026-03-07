@@ -51,8 +51,8 @@ class AuthServiceTest {
 
         AuthResponse response = authService.register(new RegisterRequest("test@example.com", "password123", "Test User"));
 
-        assertThat(response.getAccessToken()).isEqualTo("access-token");
-        assertThat(response.getEmail()).isEqualTo("test@example.com");
+        assertThat(response.accessToken()).isEqualTo("access-token");
+        assertThat(response.email()).isEqualTo("test@example.com");
     }
 
     @Test
@@ -73,7 +73,7 @@ class AuthServiceTest {
 
         AuthResponse response = authService.login(new LoginRequest("test@example.com", "password123"));
 
-        assertThat(response.getAccessToken()).isEqualTo("access-token");
+        assertThat(response.accessToken()).isEqualTo("access-token");
     }
 
     @Test
@@ -104,7 +104,7 @@ class AuthServiceTest {
 
         AuthResponse response = authService.refresh(new RefreshRequest("refresh-token"));
 
-        assertThat(response.getAccessToken()).isEqualTo("new-access");
+        assertThat(response.accessToken()).isEqualTo("new-access");
     }
 
     @Test

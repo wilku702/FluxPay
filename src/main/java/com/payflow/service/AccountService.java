@@ -23,7 +23,7 @@ public class AccountService {
 
     @Transactional
     public AccountResponse create(Long userId, CreateAccountRequest request) {
-        Account account = new Account(userId, request.getAccountName(), request.getCurrency());
+        Account account = new Account(userId, request.accountName(), request.currency());
         account = accountRepository.save(account);
         return AccountResponse.from(account);
     }
@@ -53,8 +53,8 @@ public class AccountService {
         if (!account.getUserId().equals(userId)) {
             throw new AccountNotFoundException(id);
         }
-        validateStatusTransition(account.getStatus(), request.getStatus());
-        account.setStatus(request.getStatus());
+        validateStatusTransition(account.getStatus(), request.status());
+        account.setStatus(request.status());
         account = accountRepository.save(account);
         balanceCacheService.evict(account.getId());
         return AccountResponse.from(account);

@@ -44,8 +44,8 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(404);
-        assertThat(response.getBody().getMessage()).contains("42");
+        assertThat(response.getBody().status()).isEqualTo(404);
+        assertThat(response.getBody().message()).contains("42");
     }
 
     // -------------------------------------------------------------------------
@@ -60,8 +60,8 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(403);
-        assertThat(response.getBody().getMessage()).contains("7");
+        assertThat(response.getBody().status()).isEqualTo(403);
+        assertThat(response.getBody().message()).contains("7");
     }
 
     // -------------------------------------------------------------------------
@@ -76,8 +76,8 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(409);
-        assertThat(response.getBody().getMessage()).contains("Insufficient funds");
+        assertThat(response.getBody().status()).isEqualTo(409);
+        assertThat(response.getBody().message()).contains("Insufficient funds");
     }
 
     // -------------------------------------------------------------------------
@@ -103,10 +103,10 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getId()).isEqualTo(10L);
-        assertThat(response.getBody().getType()).isEqualTo(TransactionType.CREDIT);
-        assertThat(response.getBody().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(100));
-        assertThat(response.getBody().getStatus()).isEqualTo(TransactionStatus.COMPLETED);
+        assertThat(response.getBody().id()).isEqualTo(10L);
+        assertThat(response.getBody().type()).isEqualTo(TransactionType.CREDIT);
+        assertThat(response.getBody().amount()).isEqualByComparingTo(BigDecimal.valueOf(100));
+        assertThat(response.getBody().status()).isEqualTo(TransactionStatus.COMPLETED);
     }
 
     // -------------------------------------------------------------------------
@@ -121,9 +121,9 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(400);
-        assertThat(response.getBody().getMessage()).contains("USD");
-        assertThat(response.getBody().getMessage()).contains("EUR");
+        assertThat(response.getBody().status()).isEqualTo(400);
+        assertThat(response.getBody().message()).contains("USD");
+        assertThat(response.getBody().message()).contains("EUR");
     }
 
     // -------------------------------------------------------------------------
@@ -138,8 +138,8 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(409);
-        assertThat(response.getBody().getMessage()).contains("dup@example.com");
+        assertThat(response.getBody().status()).isEqualTo(409);
+        assertThat(response.getBody().message()).contains("dup@example.com");
     }
 
     // -------------------------------------------------------------------------
@@ -154,8 +154,8 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(401);
-        assertThat(response.getBody().getMessage()).isEqualTo("Invalid email or password");
+        assertThat(response.getBody().status()).isEqualTo(401);
+        assertThat(response.getBody().message()).isEqualTo("Invalid email or password");
     }
 
     // -------------------------------------------------------------------------
@@ -171,8 +171,8 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(409);
-        assertThat(response.getBody().getMessage()).contains("Concurrent modification conflict");
+        assertThat(response.getBody().status()).isEqualTo(409);
+        assertThat(response.getBody().message()).contains("Concurrent modification conflict");
     }
 
     // -------------------------------------------------------------------------
@@ -187,8 +187,8 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(400);
-        assertThat(response.getBody().getMessage())
+        assertThat(response.getBody().status()).isEqualTo(400);
+        assertThat(response.getBody().message())
                 .isEqualTo("Source and destination accounts must be different");
     }
 }
